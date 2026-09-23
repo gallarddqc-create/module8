@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Tactique & stratégie</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+  :root{--bg:#ece9e2;--panel:#fff;--panel-2:#f5f6f2;--line:#dcdfd7;--ink:#1c211d;--soft:#5f675e;
+    --accent:#d92c1e;--ok:#1a8a4f;--bad:#d92c1e;--warn:#d98a00;--shadow:0 1px 2px rgba(20,30,20,.06),0 10px 30px rgba(20,30,20,.08);}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14150f;--panel:#1d211b;--panel-2:#23281f;--line:#333a2e;--ink:#e9ece3;--soft:#a3ab9d;--accent:#ff5b4d;--ok:#37d996;--bad:#ff6b5e;--warn:#f0a83a;--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{--bg:#14150f;--panel:#1d211b;--panel-2:#23281f;--line:#333a2e;--ink:#e9ece3;--soft:#a3ab9d;--accent:#ff5b4d;--ok:#37d996;--bad:#ff6b5e;--warn:#f0a83a;--shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.4);}
+  *{box-sizing:border-box}html,body{min-height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;padding:20px 16px 40px;display:flex;justify-content:center}
+  .wrap{width:100%;max-width:660px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .badge{width:46px;height:46px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-size:24px;flex:none}
+  h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:24px;margin:0;line-height:1}
+  header p{margin:3px 0 0;font-size:12.5px;color:var(--soft)}
+  .theme{margin-left:auto;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer;font-family:inherit}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mode{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;box-shadow:var(--shadow);transition:.14s;font-family:inherit;color:inherit}
+  .mode:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .mode .ic{font-size:24px}
+  .mode .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.3px}
+  .mode .d{font-size:12px;color:var(--soft);line-height:1.4}
+  .mode .ch{font-size:10.5px;font-weight:700;letter-spacing:.6px;color:var(--accent);text-transform:uppercase}
+  .mode.full{grid-column:1/-1}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px;margin-top:4px}
+  .topline{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .back{font-size:13px;color:var(--soft);background:none;border:none;cursor:pointer;padding:0;font-family:inherit}
+  .prog{flex:1;height:8px;background:var(--panel-2);border-radius:99px;overflow:hidden}
+  .prog>i{display:block;height:100%;background:var(--accent);width:0;transition:.3s}
+  .count{font-size:12.5px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .q{font-size:12px;color:var(--accent);margin:0 0 6px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+  .qbig{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;line-height:1.2;margin:0 0 18px;text-wrap:balance}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{font-family:inherit;font-size:15px;text-align:left;background:var(--panel-2);color:var(--ink);border:1.5px solid var(--line);border-radius:11px;padding:13px 15px;cursor:pointer;transition:.12s;line-height:1.35}
+  .opt:hover:not(:disabled){border-color:var(--soft)}
+  .opt:disabled{cursor:default}
+  .opt.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent);font-weight:600}
+  .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,transparent)}
+  .expl{margin:16px 0 0;padding:12px 14px;background:var(--panel-2);border-radius:11px;font-size:13.5px;line-height:1.5}
+  .expl b{color:var(--accent)}
+  .next{margin-top:16px;width:100%;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.4px;background:var(--accent);color:#fff;border:none;border-radius:11px;padding:13px;cursor:pointer}
+  /* ordre */
+  .decksel{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .decksel button{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;letter-spacing:.4px;background:var(--panel-2);border:1.5px solid var(--line);border-radius:9px;padding:7px 13px;cursor:pointer;color:var(--ink)}
+  .decksel button.on{background:var(--accent);color:#fff;border-color:transparent}
+  .ord-instr{font-size:13px;color:var(--soft);margin:0 0 14px;line-height:1.5}
+  .slots{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .slot{display:flex;gap:11px;align-items:flex-start;background:var(--panel-2);border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;min-height:46px;cursor:pointer;font-size:14px;line-height:1.35}
+  .slot .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);min-width:18px}
+  .slot.empty{color:var(--soft);font-style:italic;cursor:default}
+  .slot.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+  .slot.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+  .pool-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--soft);margin:0 0 8px}
+  .pool{display:flex;flex-direction:column;gap:8px}
+  .chip{text-align:left;background:var(--panel);border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;cursor:pointer;font-family:inherit;font-size:14px;line-height:1.35;color:var(--ink)}
+  .chip:hover{border-color:var(--soft)}
+  .ord-actions{display:flex;gap:10px;margin-top:16px}
+  .ord-actions button{flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:15px;border-radius:11px;padding:13px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .ord-actions button.primary{background:var(--accent);color:#fff;border-color:transparent}
+  .ord-actions button:disabled{opacity:.45;cursor:default}
+  .ord-result{margin-top:14px;padding:13px 15px;border-radius:11px;font-size:13.5px;line-height:1.5}
+  .ord-result ol{margin:8px 0 0;padding-left:20px}.ord-result li{margin-bottom:5px}
+  .result{text-align:center;padding:10px 0}
+  .score{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:56px;line-height:1}
+  .result .msg{font-size:16px;margin:8px 0 22px}
+  .result .row{display:flex;gap:10px}
+  .result .row button{flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:15px;border-radius:11px;padding:13px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .result .row button.primary{background:var(--accent);color:#fff;border-color:transparent}
+  /* zones visuel */
+  .zinstr{font-size:13px;color:var(--soft);margin:0 0 12px;line-height:1.5}
+  #zoneSvg{width:100%;height:auto;display:block;background:var(--panel-2);border-radius:12px;border:1px solid var(--line);touch-action:manipulation}
+  .bandlabel{font-family:'Barlow Condensed',sans-serif;font-weight:700;fill:#fff;font-size:15px;pointer-events:none;text-transform:uppercase;letter-spacing:.4px}
+  .zpalette{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .zchip{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;border:1.5px solid var(--line);border-radius:9px;padding:8px 13px;cursor:pointer;background:var(--panel-2);color:var(--ink)}
+  .zchip.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .zchip.used{opacity:.4}
+  .perim{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .perim .pname{flex:1;min-width:160px}
+  .sw{width:32px;height:26px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .sw.on{border-color:var(--ink);transform:scale(1.08)}
+  .perim.correct .pname{color:var(--ok);font-weight:600}
+  .perim.wrong .pname{color:var(--bad)}
+  [hidden]{display:none!important}
+  footer{margin-top:22px;font-size:12px;color:var(--soft);text-align:center;line-height:1.5}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">🎯</div>
+    <div><h1>Tactique &amp; stratégie</h1><p>Module 8 · Chapitres 3-4-5</p></div>
+    <button class="theme" id="theme">◐ Thème</button>
+  </header>
+
+  <section id="menu" class="modes">
+    <button class="mode" data-zone><span class="ch">Ch. 3</span><span class="ic">🎨</span><span class="t">Zones &amp; périmètres</span><span class="d">Plan interactif : place les zones et colorie les rubans</span></button>
+    <button class="mode" data-order><span class="ch">Ch. 4</span><span class="ic">🧩</span><span class="t">Priorités dans l'ordre</span><span class="d">SERPEC · SEVAP · SLICE-RS · BEEF</span></button>
+    <button class="mode" data-quiz="ch4"><span class="ch">Ch. 4</span><span class="ic">📋</span><span class="t">PC &amp; stratégies</span><span class="d">Modes de PC, rapports, stratégies</span></button>
+    <button class="mode" data-quiz="ch5"><span class="ch">Ch. 5</span><span class="ic">💨</span><span class="t">Ventilation</span><span class="d">Types, paramètres, courants d'air</span></button>
+    <button class="mode full" data-quiz="gen"><span class="ch">Ch. 3-4-5</span><span class="ic">🏆</span><span class="t">Quiz général</span><span class="d">Test mixte sur les trois chapitres</span></button>
+  </section>
+
+  <section id="quiz" class="card" hidden>
+    <div class="topline"><button class="back" data-back>← Menu</button><div class="prog"><i id="bar"></i></div><span class="count" id="count"></span></div>
+    <p class="q" id="qlabel"></p>
+    <p class="qbig" id="qtext"></p>
+    <div class="opts" id="opts"></div>
+    <div class="expl" id="expl" hidden></div>
+    <button class="next" id="next" hidden>Suivant →</button>
+  </section>
+
+  <section id="orderwrap" class="card" hidden>
+    <div class="topline"><button class="back" data-back>← Menu</button><span class="count" id="ordcount" style="margin-left:auto"></span></div>
+    <div class="decksel" id="deckSel"></div>
+    <p class="ord-instr">Touche les éléments dans le bon ordre. Touche un élément placé pour le retirer, puis clique « Valider ».</p>
+    <div class="slots" id="slots"></div>
+    <p class="pool-lbl">Éléments à placer</p>
+    <div class="pool" id="pool"></div>
+    <div class="ord-result" id="ordResult" hidden></div>
+    <div class="ord-actions"><button id="ordReset">Mélanger</button><button class="primary" id="ordValidate">Valider</button></div>
+  </section>
+
+  <section id="zonewrap" class="card" hidden>
+    <div class="topline"><button class="back" data-back>← Menu</button><span class="count">Zones &amp; périmètres</span></div>
+    <p class="q">Étape 1 — Les zones de travail</p>
+    <p class="zinstr">Choisis une zone, puis touche l'anneau du plan où elle se situe (le feu est au centre).</p>
+    <svg id="zoneSvg" viewBox="0 0 480 360" aria-label="Plan des zones">
+      <rect id="b2" x="20" y="20" width="440" height="320" rx="16" fill="#8a9187" stroke="rgba(0,0,0,.15)" stroke-width="2"/>
+      <rect id="b1" x="95" y="66" width="290" height="228" rx="14" fill="#8a9187" stroke="rgba(0,0,0,.15)" stroke-width="2"/>
+      <rect id="b0" x="176" y="120" width="128" height="120" rx="12" fill="#8a9187" stroke="rgba(0,0,0,.15)" stroke-width="2"/>
+      <rect x="222" y="150" width="36" height="34" rx="3" fill="#c62828" stroke="#7c1313" stroke-width="2" pointer-events="none"/>
+      <text x="240" y="178" text-anchor="middle" font-size="22" pointer-events="none">🔥</text>
+      <text id="l2" class="bandlabel" x="240" y="46" text-anchor="middle">?</text>
+      <text id="l1" class="bandlabel" x="240" y="90" text-anchor="middle">?</text>
+      <text id="l0" class="bandlabel" x="240" y="140" text-anchor="middle">?</text>
+    </svg>
+    <div class="zpalette" id="zpal"></div>
+    <p class="q" style="margin-top:22px">Étape 2 — La couleur des rubans (périmètres)</p>
+    <div id="perimList"></div>
+    <div class="ord-result" id="zResult" hidden></div>
+    <div class="ord-actions"><button id="zReset">Recommencer</button><button class="primary" id="zValidate">Valider</button></div>
+  </section>
+
+  <section id="results" class="card" hidden>
+    <div class="result"><div class="score" id="finalScore"></div><p class="msg" id="finalMsg"></p>
+      <div class="row"><button class="primary" id="retry">Recommencer</button><button id="toMenu">Menu</button></div></div>
+  </section>
+
+  <footer>Contenu tiré des notes de cours (NDC V4 M8). · <a href="./">Menu des exercices</a> · <a href="radio.html">Entraîneur radio</a> · <a href="plan.html">Simulateur</a></footer>
+</div>
+
+<script>
+/* ---------- BANQUES DE QUESTIONS (notes M8) ---------- */
+const CH3=[
+ {q:"Quelle couleur de ruban pour le périmètre de police ?",a:"Orange brûlé",w:["Jaune","Bleu","Rouge"],e:"Périmètre de police = ruban <b>orange brûlé</b> (interdit l'accès aux personnes non autorisées)."},
+ {q:"Quelle couleur de ruban pour le périmètre d'opération ?",a:"Jaune",w:["Orange brûlé","Bleu","Rouge"],e:"Opération = ruban <b>jaune</b>, réservé au personnel en tenue intégrale."},
+ {q:"Quelle couleur de ruban pour le périmètre média ?",a:"Bleu",w:["Jaune","Orange brûlé","Vert"],e:"Média = ruban <b>bleu</b>."},
+ {q:"Quelle couleur de ruban pour le périmètre d'accès interdit ?",a:"Rouge",w:["Jaune","Bleu","Orange brûlé"],e:"Accès interdit = ruban <b>rouge</b> (lieux jugés dangereux)."},
+ {q:"Où se situe la zone chaude ?",a:"Immédiatement autour de l'incident",w:["En périphérie de la zone tiède","Là où se trouve le PC","À l'entrée de la caserne"],e:"Zone chaude : autour de l'incident, ruban rouge, accès limité au personnel formé et muni d'EPI."},
+ {q:"Que retrouve-t-on dans la zone froide ?",a:"Le PC, les réserves, le repos et la décontamination",w:["Le foyer de l'incendie","L'équipe d'attaque","Le point d'eau seulement"],e:"Zone froide : PC, unités de réserve, aires de repos et de décontamination."},
+ {q:"À quoi sert la zone tiède ?",a:"Regrouper l'équipement nécessaire à l'intervention",w:["Contenir le foyer","Accueillir les médias","Stationner les ambulances"],e:"Zone tiède : périphérie de la zone chaude, on y regroupe l'équipement."},
+ {q:"Un secteur peut être divisé en…",a:"Étages puis en sections / cadrans",w:["Zones chaude/tiède/froide","Périmètres de couleur","Casernes"],e:"Un secteur (bâtiment ou espace) se divise en étages, puis en sections/cadrans."}
+];
+const CH4=[
+ {q:"Rapport primaire — que signifie le « A » ?",a:"Adresse de l'intervention",w:["Ampleur du feu","Attaque","Alarme"],e:"A = Adresse, B = Bâtiment, C = Conditions du feu (+ PC + code d'évolution)."},
+ {q:"Rapport primaire — que signifie le « B » ?",a:"Bâtiment : étages, attaché ou non, usage",w:["Brûlure","Borne-fontaine","Backdraft"],e:"B = Bâtiment (nombre d'étages, attaché ou non, usage)."},
+ {q:"Qui effectue le 360 dès son arrivée ?",a:"L'officier",w:["Le fontainier","Le porte-lance","La centrale"],e:"Le 360 est la 1re évaluation, faite par l'officier : tour du bâtiment pour capter indices et faits."},
+ {q:"Mode de PC : seul officier, rien d'apparent, on investigue",a:"Reconnaissance",w:["Attaque","Stationnaire","PC requis"],e:"PC en mode <b>Reconnaissance</b> (10-17)."},
+ {q:"Quel mode de PC faut-il privilégier ?",a:"Stationnaire",w:["Reconnaissance","Attaque","PC requis"],e:"Le mode <b>Stationnaire</b> (2 officiers, secteur 5 face au bâtiment) est à privilégier."},
+ {q:"Le « PC requis » peut être demandé…",a:"Par le 1er officier seulement, une seule fois",w:["Par n'importe quel pompier","Par la centrale","Autant de fois que nécessaire"],e:"PC requis : demandé uniquement par le 1er officier arrivé, une seule fois par intervention."},
+ {q:"Stratégie offensive =",a:"Attaque à l'intérieur, dans la zone de danger",w:["Lances de l'extérieur, personne ne rentre","Aucune approche","Attente des techniciens"],e:"Offensive : intervention à l'intérieur, priorité sauvetages et extinction."},
+ {q:"Stratégie défensive =",a:"Lances haut débit de l'extérieur, personne ne rentre",w:["Attaque intérieure directe","Recherche primaire","Ventilation verticale"],e:"Défensive : feu hors de contrôle, lances de l'extérieur, périmètre 1,5× la hauteur, personne ne rentre."},
+ {q:"Quand applique-t-on la non-intervention ?",a:"Ex. matières dangereuses, en attente des techniciens",w:["Dès l'arrivée sur tout feu","Pour un feu de cuisine","Quand la borne est loin"],e:"Non-intervention : aucune approche des matières en cause pour raisons de sécurité."},
+ {q:"À quoi correspond le SERPEC ?",a:"Priorité de sauvetage et d'extinction",w:["Priorité de combat","Priorité de déblai","Priorité de communication"],e:"SERPEC = sauvetage et extinction. (SEVAP = combat, BEEF = déblai.)"}
+];
+const CH5=[
+ {q:"VPP (pression positive) : où placer le ventilateur ?",a:"4 à 10 pi (1,2-3 m) à l'extérieur de l'entrée",w:["Directement dans l'ouverture","Sur le toit","Au centre de la pièce"],e:"VPP : ventilo 4-10 pi de l'entrée ; ne pas ouvrir d'autres portes/fenêtres pendant."},
+ {q:"Ventilation hydrodynamique : quel angle de jet ?",a:"30° à 60°",w:["10° à 20°","70° à 90°","0° (jet plein)"],e:"Hydrodynamique : lance 2-6 pi de l'ouverture, angle 30-60°, couvre 85-90 %, ~80 lb/po²."},
+ {q:"Dimensions d'une trouée au toit ?",a:"4 × 4 pi (1,2 m × 1,2 m)",w:["2 × 2 pi","6 × 6 pi","1 × 1 m"],e:"Trouée carrée/rectangulaire de 4×4 pi (1,2 m)."},
+ {q:"VPN (pression négative) : où placer l'extracteur ?",a:"Du côté sous le vent",w:["Au vent","Sur le toit","Dans le foyer"],e:"VPN : ventilation dans la direction du vent dominant, extracteur côté sous le vent."},
+ {q:"Courant bidirectionnel à une même ouverture :",a:"Air frais entre par le bas, gaz chauds sortent par le haut",w:["Tout sort par le haut","Tout entre par le bas","Aucun mouvement d'air"],e:"Bidirectionnel : flux opposés à une même ouverture ; attention au faux sentiment de sécurité."},
+ {q:"La règle d'or de la progression :",a:"On entre par le bas, on sort par le haut",w:["On entre par le haut","On ventile toujours d'abord","On ouvre tout en même temps"],e:"On entre par le bas, on sort par le haut — jamais l'inverse."},
+ {q:"Bâtiment à plusieurs niveaux : l'attaque intérieure se fait…",a:"Par l'ouverture la plus basse",w:["Par l'ouverture la plus haute","Par le toit","Par n'importe quelle ouverture"],e:"On attaque par l'ouverture la plus basse : la vapeur est poussée vers le haut."},
+ {q:"« Ventiler pour refroidir » (vent to cool) est…",a:"Erroné : ventiler ne refroidit pas automatiquement",w:["La méthode recommandée","Valable au sous-sol","Exigé avant toute attaque"],e:"Ventiler retire fumée/gaz mais ne réduit pas forcément la température ; mal utilisée, elle alimente le feu."},
+ {q:"Ventilation verticale =",a:"Ouverture dans le toit pour évacuer fumée et gaz chauds",w:["Ouverture des portes/fenêtres","Jet d'eau par une fenêtre","Ventilateur à l'entrée"],e:"Verticale : trouée/ouvertures du toit ; descendre du toit dès la tâche terminée."},
+ {q:"Avant de ventiler, quelles 4 questions se poser ?",a:"Où ? Quand ? Comment ? Pourquoi ?",w:["Qui ? Quoi ? Où ? Quand ?","Combien ? Où ? Qui ?","Avant ? Pendant ? Après ?"],e:"Ventiler de manière réfléchie : OÙ, QUAND, COMMENT, POURQUOI + effet prévisible."}
+];
+const BANKS={ch3:CH3,ch4:CH4,ch5:CH5,gen:CH3.concat(CH4,CH5)};
+const TITLES={ch3:"Zones & périmètres",ch4:"PC & stratégies",ch5:"Ventilation",gen:"Quiz général 3-4-5"};
+
+const DECKS={
+ "SERPEC":["Sauvetage","Évacuation","Recherche","Propagation","Extinction","Circonscription"],
+ "SEVAP":["Sauvetage","Évacuation","Ventilation","Attaque","Protection"],
+ "SLICE-RS":["Size up — reconnaissance 360°","Locate the fire — localiser le feu","Identify & control the flow path — contrôler le courant d'air","Cool from a safe place — refroidir depuis une position sûre","Extinguish — extinction du foyer","Rescue — sauvetage","Salvage — protection des biens"],
+ "BEEF":["Bâchage","Évacuation de l'eau","Électricité","Fermeture de sécurité"]
+};
+
+/* ---------- OUTILS ---------- */
+const $=id=>document.getElementById(id);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+function sample(a,n){return shuffle(a).slice(0,n);}
+function show(sec){["menu","quiz","orderwrap","zonewrap","results"].forEach(id=>$(id).hidden=(id!==sec));}
+
+/* ---------- QUIZ ---------- */
+let questions=[],idx=0,score=0,curBank=null,answered=false;
+function startQuiz(bank){
+  curBank=bank;
+  const src=BANKS[bank];const n=bank==="gen"?12:Math.min(8,src.length);
+  questions=sample(src,n).map(it=>({label:TITLES[bank],text:it.q,correct:it.a,options:shuffle([it.a,...it.w]),expl:it.e}));
+  idx=0;score=0;show("quiz");renderQ();
+}
+function renderQ(){
+  answered=false;const q=questions[idx];
+  $("qlabel").textContent=q.label;$("qtext").textContent=q.text;
+  $("count").textContent=`${idx+1} / ${questions.length}`;
+  $("bar").style.width=`${idx/questions.length*100}%`;
+  $("expl").hidden=true;$("next").hidden=true;
+  const box=$("opts");box.innerHTML="";
+  q.options.forEach(o=>{const b=document.createElement("button");b.className="opt";b.textContent=o;b.onclick=()=>choose(b,o,q);box.appendChild(b);});
+}
+function choose(btn,val,q){
+  if(answered)return;answered=true;
+  const ok=val===q.correct;if(ok)score++;
+  [...$("opts").children].forEach(b=>{b.disabled=true;if(b.textContent===q.correct)b.classList.add("correct");else if(b===btn)b.classList.add("wrong");});
+  $("expl").innerHTML=(ok?"✅ ":"❌ ")+q.expl;$("expl").hidden=false;
+  $("bar").style.width=`${(idx+1)/questions.length*100}%`;
+  $("next").hidden=false;$("next").textContent=idx+1<questions.length?"Suivant →":"Voir mon résultat";
+}
+$("next").onclick=()=>{idx++;if(idx<questions.length)renderQ();else finish();};
+function finish(){
+  show("results");const total=questions.length,pct=score/total;
+  $("finalScore").textContent=`${score} / ${total}`;
+  $("finalScore").style.color=pct>=0.8?"var(--ok)":pct>=0.5?"var(--warn)":"var(--bad)";
+  $("finalMsg").textContent=pct===1?"Parfait ! Tu maîtrises.":pct>=0.8?"Très bien !":pct>=0.5?"Correct, continue à réviser.":"À retravailler — refais un tour.";
+}
+$("retry").onclick=()=>startQuiz(curBank);
+$("toMenu").onclick=()=>show("menu");
+
+/* ---------- ORDRE (priorités) ---------- */
+let ordPool=[],ordAns=[],ordDone=false,curDeck="SLICE-RS";
+function renderDeckSel(){
+  const bar=$("deckSel");bar.innerHTML="";
+  Object.keys(DECKS).forEach(k=>{const b=document.createElement("button");b.textContent=k;if(k===curDeck)b.classList.add("on");b.onclick=()=>startOrder(k);bar.appendChild(b);});
+}
+function startOrder(deck){
+  curDeck=deck||curDeck;ordDone=false;ordAns=[];
+  ordPool=shuffle(DECKS[curDeck].map((t,i)=>({t,i})));
+  show("orderwrap");renderDeckSel();renderOrder();
+}
+function renderOrder(){
+  const steps=DECKS[curDeck];const slots=$("slots");slots.innerHTML="";
+  for(let i=0;i<steps.length;i++){
+    const a=ordAns[i];const d=document.createElement("div");
+    if(a){d.className="slot"+(ordDone?(a.i===i?" correct":" wrong"):"");d.innerHTML=`<span class="num">${i+1}</span><span>${a.t}</span>`;if(!ordDone)d.onclick=()=>{ordPool.push(a);ordAns.splice(i,1);renderOrder();};}
+    else{d.className="slot empty";d.innerHTML=`<span class="num">${i+1}</span><span>—</span>`;}
+    slots.appendChild(d);
+  }
+  const pool=$("pool");pool.innerHTML="";
+  ordPool.forEach(p=>{const b=document.createElement("button");b.className="chip";b.textContent=p.t;b.onclick=()=>{if(ordDone)return;ordAns.push(p);ordPool=ordPool.filter(x=>x!==p);renderOrder();};pool.appendChild(b);});
+  $("ordcount").textContent=`${curDeck} · ${ordAns.length} / ${steps.length}`;
+  $("ordValidate").disabled=ordAns.length!==steps.length||ordDone;
+  if(!ordDone)$("ordResult").hidden=true;
+}
+$("ordValidate").onclick=()=>{
+  const steps=DECKS[curDeck];if(ordAns.length!==steps.length)return;
+  ordDone=true;renderOrder();
+  const good=ordAns.filter((a,i)=>a.i===i).length;const r=$("ordResult");r.hidden=false;
+  if(good===steps.length){r.style.background="color-mix(in srgb,var(--ok) 14%,transparent)";r.style.color="var(--ok)";r.innerHTML=`✅ Parfait — ordre exact du ${curDeck} !`;}
+  else{r.style.background="color-mix(in srgb,var(--bad) 12%,transparent)";r.style.color="var(--ink)";r.innerHTML=`<b>${good} / ${steps.length}</b> bien placés.<br><br><b>Ordre correct (${curDeck}) :</b><ol>${steps.map(s=>`<li>${s}</li>`).join("")}</ol>`;}
+};
+$("ordReset").onclick=()=>startOrder(curDeck);
+
+/* ---------- ZONES & PÉRIMÈTRES (plan visuel) ---------- */
+const ZONES=[
+  {key:"chaude",name:"Zone chaude",band:0,fill:"#d9503a"},
+  {key:"tiede",name:"Zone tiède",band:1,fill:"#e6952f"},
+  {key:"froide",name:"Zone froide",band:2,fill:"#3f8f6e"}
+];
+const PERIMS=[
+  {name:"Périmètre de police",color:"orange"},
+  {name:"Périmètre d'opération",color:"jaune"},
+  {name:"Périmètre média",color:"bleu"},
+  {name:"Périmètre d'accès interdit",color:"rouge"}
+];
+const SWATCHES=[{k:"orange",c:"#c65d21"},{k:"jaune",c:"#f2c200"},{k:"bleu",c:"#2b6fd6"},{k:"rouge",c:"#d92c1e"}];
+let zoneAssign=[null,null,null],perimPick=[null,null,null,null],selZone=null,zDone=false;
+function startZones(){
+  zoneAssign=[null,null,null];perimPick=[null,null,null,null];selZone=null;zDone=false;
+  show("zonewrap");
+  [0,1,2].forEach(i=>$("b"+i).onclick=()=>assignBand(i));
+  renderZones();$("zResult").hidden=true;
+}
+function assignBand(i){
+  if(zDone||!selZone)return;
+  const j=zoneAssign.indexOf(selZone);if(j>=0)zoneAssign[j]=null;
+  zoneAssign[i]=selZone;selZone=null;renderZones();
+}
+function paintBand(i){
+  const el=$("b"+i),key=zoneAssign[i],z=key?ZONES.find(x=>x.key===key):null;
+  el.setAttribute("fill",z?z.fill:"#8a9187");
+  $("l"+i).textContent=z?z.name:"?";
+  if(zDone){const ck=ZONES.find(x=>x.band===i).key;el.setAttribute("stroke",key===ck?"#1a8a4f":"#d92c1e");el.setAttribute("stroke-width","4");}
+  else{el.setAttribute("stroke","rgba(0,0,0,.15)");el.setAttribute("stroke-width","2");}
+}
+function renderZPal(){
+  const p=$("zpal");p.innerHTML="";
+  ZONES.forEach(z=>{const b=document.createElement("button");
+    b.className="zchip"+(selZone===z.key?" on":"")+(zoneAssign.includes(z.key)?" used":"");
+    b.textContent=z.name;b.onclick=()=>{if(zDone)return;selZone=z.key;renderZPal();};p.appendChild(b);});
+}
+function renderPerims(){
+  const c=$("perimList");c.innerHTML="";
+  PERIMS.forEach((p,i)=>{
+    const row=document.createElement("div");row.className="perim"+(zDone?(perimPick[i]===p.color?" correct":" wrong"):"");
+    const nm=document.createElement("span");nm.className="pname";nm.textContent=p.name;row.appendChild(nm);
+    SWATCHES.forEach(s=>{const b=document.createElement("button");b.className="sw"+(perimPick[i]===s.k?" on":"");b.style.background=s.c;b.title=s.k;
+      b.onclick=()=>{if(zDone)return;perimPick[i]=s.k;renderPerims();};row.appendChild(b);});
+    c.appendChild(row);
+  });
+}
+function renderZones(){[0,1,2].forEach(paintBand);renderZPal();renderPerims();}
+$("zValidate").onclick=()=>{
+  zDone=true;renderZones();
+  const zg=ZONES.filter(z=>zoneAssign[z.band]===z.key).length;
+  const pg=PERIMS.filter((p,i)=>perimPick[i]===p.color).length;
+  const all=zg===3&&pg===4,r=$("zResult");r.hidden=false;
+  r.style.background=all?"color-mix(in srgb,var(--ok) 14%,transparent)":"color-mix(in srgb,var(--bad) 12%,transparent)";
+  r.style.color=all?"var(--ok)":"var(--ink)";
+  r.innerHTML=all?"✅ Parfait ! Zones et rubans exacts.":
+    `Zones : <b>${zg}/3</b> · Rubans : <b>${pg}/4</b>.<br><br><b>Rappel —</b> centre : <b>zone chaude</b> (autour de l'incident, EPI) · milieu : <b>zone tiède</b> (équipement) · extérieur : <b>zone froide</b> (PC, réserves, repos, décon).<br>Rubans : police <b>orange brûlé</b>, opération <b>jaune</b>, média <b>bleu</b>, accès interdit <b>rouge</b>.`;
+};
+$("zReset").onclick=startZones;
+
+/* ---------- NAV ---------- */
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{if(b.dataset.quiz)startQuiz(b.dataset.quiz);else if(b.hasAttribute("data-zone"))startZones();else startOrder();});
+document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>show("menu"));
+$("theme").onclick=()=>{const r=document.documentElement;const dark=r.getAttribute("data-theme")==="dark"||(!r.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);r.setAttribute("data-theme",dark?"light":"dark");};
+</script>
+</body>
+</html>

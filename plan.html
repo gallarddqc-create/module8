@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Plan d'intervention</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#eceee9; --panel:#ffffff; --panel-2:#f5f6f2; --line:#d9dcd4;
+    --ink:#1e2420; --ink-soft:#5c655d; --accent:#d92c1e;
+    /* carte */
+    --map-ground:#e6ebdd; --map-road:#ffffff; --map-casing:#d3d5cc;
+    --map-bldg:#e1dac9; --map-bldg-line:#c9bda6; --map-park:#cfe3bd;
+    --map-ink:#6b7268; --map-hydrant:#e11b0f; --map-fire:#c62828;
+    --map-fire-line:#7c1313; --map-caserne:#2b5fb0; --route:#0f8f5f;
+    --ok:#1a8a4f; --warn:#d98a00; --bad:#d92c1e;
+    --shadow:0 1px 2px rgba(20,30,20,.08),0 6px 20px rgba(20,30,20,.06);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#151814; --panel:#1d211b; --panel-2:#23281f; --line:#333a2e;
+      --ink:#e7ebe2; --ink-soft:#9aa596; --accent:#ff5b4d;
+      --map-ground:#232a1f; --map-road:#3b4235; --map-casing:#1a1f16;
+      --map-bldg:#353c2e; --map-bldg-line:#4a5340; --map-park:#2e4226;
+      --map-ink:#aebaa2; --map-hydrant:#ff453a; --map-fire:#e5433a;
+      --map-fire-line:#ffb3ad; --map-caserne:#4d8be6;
+      --route:#37d996; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 26px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#151814; --panel:#1d211b; --panel-2:#23281f; --line:#333a2e;
+    --ink:#e7ebe2; --ink-soft:#9aa596; --accent:#ff5b4d;
+    --map-ground:#232a1f; --map-road:#3b4235; --map-casing:#1a1f16;
+    --map-bldg:#353c2e; --map-bldg-line:#4a5340; --map-park:#2e4226;
+    --map-ink:#aebaa2; --map-hydrant:#ff453a; --map-fire:#e5433a;
+    --map-fire-line:#ffb3ad; --map-caserne:#4d8be6; --route:#37d996;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 26px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .topbar{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);z-index:5;
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+  .brand .badge{
+    width:34px;height:34px;border-radius:9px;background:var(--accent);
+    display:grid;place-items:center;color:#fff;font-size:19px;flex:none;
+  }
+  .brand h1{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;
+    font-size:21px;letter-spacing:.3px;margin:0;line-height:1;text-transform:uppercase;
+  }
+  .brand p{margin:2px 0 0;font-size:12px;color:var(--ink-soft)}
+
+  .scenario-pick{display:flex;align-items:center;gap:8px}
+  .scenario-pick label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink-soft);font-weight:600}
+  select,.btn{
+    font-family:inherit;font-size:14px;color:var(--ink);
+    background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+    padding:8px 12px;cursor:pointer;transition:.12s;
+  }
+  select{min-width:200px}
+  .btn:hover{border-color:var(--ink-soft)}
+  .btn.ghost{background:transparent}
+  .btn.primary{
+    width:100%;margin:12px 0 8px;background:var(--ok);border-color:transparent;color:#fff;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.4px;
+    text-transform:uppercase;padding:11px;
+  }
+  .btn.primary:hover{filter:brightness(1.06)}
+
+  .verdict{
+    display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:10px;margin:10px 0 0;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:.3px;
+  }
+  .verdict .score{margin-left:auto;font-variant-numeric:tabular-nums}
+  .verdict.pass{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+  .verdict.mid{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+  .verdict.fail{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+  .readout li.crit .dot{width:16px;height:16px;border-radius:50%;margin-top:1px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700}
+  .readout li.crit .dot.ok::after{content:'✓'} .readout li.crit .dot.bad::after{content:'✗'} .readout li.crit .dot.warn::after{content:'!'}
+  .readout li .why{display:block;color:var(--ink-soft);font-weight:400;margin-top:2px}
+
+  .layout{flex:1;display:flex;min-height:0}
+  .sidebar{
+    width:288px;flex:none;background:var(--panel);border-right:1px solid var(--line);
+    display:flex;flex-direction:column;overflow-y:auto;
+  }
+  .sec{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .sec h2{
+    font-family:'Barlow Condensed',sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.7px;font-size:13px;color:var(--ink-soft);margin:0 0 10px;
+  }
+  .tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tool{
+    display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel-2);cursor:pointer;
+    font-size:13px;font-weight:500;transition:.12s;text-align:left;
+  }
+  .tool:hover{border-color:var(--ink-soft)}
+  .tool.active{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
+  .tool .chip{
+    width:26px;height:18px;border-radius:4px;flex:none;display:grid;place-items:center;
+    color:#fff;font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif;
+  }
+  .tool.wide{grid-column:1/-1}
+  .tool .ic{width:24px;text-align:center;font-size:16px}
+
+  .hint{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:10px 0 0}
+  .actions{display:flex;gap:8px;margin-top:2px}
+  .actions .btn{flex:1;font-size:13px;padding:8px;text-align:center}
+
+  .note{font-size:13px;line-height:1.55}
+  .note b{color:var(--ink)}
+  .readout{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .readout li{
+    display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.4;
+    padding:8px 10px;background:var(--panel-2);border-radius:9px;border:1px solid var(--line);
+  }
+  .readout .dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex:none;background:var(--ink-soft)}
+  .readout .dot.ok{background:var(--ok)} .readout .dot.warn{background:var(--warn)} .readout .dot.bad{background:var(--bad)}
+  .readout .val{font-variant-numeric:tabular-nums;font-weight:600}
+  .empty{color:var(--ink-soft);font-size:12.5px;font-style:italic}
+
+  .legend{display:flex;flex-direction:column;gap:7px;font-size:12.5px}
+  .legend .row{display:flex;align-items:center;gap:9px}
+  .legend .sw{width:16px;height:16px;border-radius:4px;flex:none}
+  .legend .sw.round{border-radius:50%}
+
+  .mapwrap{flex:1;position:relative;min-width:0;background:var(--map-ground)}
+  svg#map{width:100%;height:100%;display:block;touch-action:none}
+  svg#map.placing{cursor:crosshair} svg#map.routing{cursor:crosshair} svg#map.erasing{cursor:not-allowed}
+
+  .veh{cursor:grab}
+  .veh text{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;pointer-events:none}
+  .street-label{font-family:'Barlow Condensed',sans-serif;fill:var(--map-ink);font-size:14px;font-weight:600;letter-spacing:.4px;pointer-events:none}
+  .map-tag{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:13px;pointer-events:none}
+
+  .zoomctl{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:5}
+  .zoomctl button{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+    font-size:24px;font-weight:600;line-height:1;cursor:pointer;box-shadow:var(--shadow);display:grid;place-items:center;font-family:inherit}
+  .zoomctl button:active{transform:scale(.94)}
+  .toast{
+    position:absolute;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:20px;font-size:13px;
+    opacity:0;transition:.25s;pointer-events:none;z-index:6;box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:860px){
+    html,body{height:auto}
+    body{overflow:auto}
+    .layout{flex-direction:column}
+    .sidebar{width:100%;flex-direction:column;overflow:visible;border-right:none;border-bottom:1px solid var(--line)}
+    .mapwrap{width:100%;height:68vh;min-height:340px}
+  }
+</style>
+</head>
+<body>
+
+
+<div class="topbar">
+  <div class="brand">
+    <div class="badge">🚒</div>
+    <div>
+      <h1>Plan d'intervention</h1>
+      <p>Module 8 · Ch. 2 — Positionnement des véhicules</p>
+    </div>
+  </div>
+  <div class="scenario-pick">
+    <label for="scenario">Scénario</label>
+    <select id="scenario"></select>
+  </div>
+  <button class="btn ghost" id="theme">◐ Thème</button>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sec">
+      <h2>Véhicules à placer</h2>
+      <div class="tools" id="palette">
+        <button class="tool" data-place="P1"><span class="chip" style="background:#d92c1e">P1</span>Autopompe 1</button>
+        <button class="tool" data-place="P2"><span class="chip" style="background:#f0663a">P2</span>Autopompe 2</button>
+        <button class="tool" data-place="ECH"><span class="chip" style="background:#f2b705;color:#3a2c00">É1</span>Échelle 1</button>
+        <button class="tool" data-place="ECH2"><span class="chip" style="background:#e08a00">É2</span>Échelle 2</button>
+        <button class="tool" data-place="PC"><span class="chip" style="background:#2b5fb0">PC</span>Poste cmd</button>
+        <button class="tool wide" data-mode="route"><span class="ic">✏️</span>Tracer le trajet des pompes</button>
+        <button class="tool wide" data-mode="erase"><span class="ic">🗑️</span>Supprimer un véhicule</button>
+      </div>
+      <p class="hint">Clique un outil puis touche la carte pour déposer. Glisse un véhicule pour le déplacer.<br>🔍 Pince à deux doigts (ou + / −) pour zoomer, glisse la carte pour te déplacer.</p>
+      <button class="btn primary" id="validate">✓ Valider mon positionnement</button>
+      <div class="actions">
+        <button class="btn" id="clear-route">Effacer trajet</button>
+        <button class="btn" id="reset">Réinitialiser</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Situation</h2>
+      <p class="note" id="note"></p>
+    </div>
+
+    <div class="sec">
+      <h2>Contrôle en direct</h2>
+      <ul class="readout" id="readout"></ul>
+    </div>
+
+    <div class="sec">
+      <h2>Légende</h2>
+      <div class="legend">
+        <div class="row"><span class="sw round" style="background:var(--map-hydrant)"></span>Borne-fontaine</div>
+        <div class="row"><span class="sw" style="background:var(--map-fire)"></span>Bâtiment en feu</div>
+        <div class="row"><span class="sw" style="background:var(--map-caserne)"></span>Caserne (départ)</div>
+        <div class="row"><span class="sw" style="background:var(--route)"></span>Trajet des pompes</div>
+        <div class="row"><span class="sw" style="background:transparent;color:var(--map-ink);display:grid;place-items:center;font-weight:700">›</span>Sens de circulation</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="mapwrap">
+    <svg id="map" viewBox="0 0 1280 820" preserveAspectRatio="xMidYMid meet" aria-label="Plan du quartier">
+      <g id="layer-static"></g>
+      <g id="layer-scenario"></g>
+      <g id="layer-route"></g>
+      <g id="layer-vehicles"></g>
+      <g id="layer-hud"></g>
+    </svg>
+    <div class="zoomctl">
+      <button id="zin" title="Zoomer" aria-label="Zoomer">+</button>
+      <button id="zout" title="Dézoomer" aria-label="Dézoomer">−</button>
+      <button id="zreset" title="Vue entière" aria-label="Vue entière">⤢</button>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+const SVGNS="http://www.w3.org/2000/svg";
+const MPP=0.3125;              // mètres par pixel (viewBox)  -> 45 m = 144 px
+const ICON_W=66, ICON_H=40;   // taille du pictogramme véhicule (gros = facile au doigt)
+const map=document.getElementById('map');
+const Lstatic=document.getElementById('layer-static');
+const Lscen=document.getElementById('layer-scenario');
+const Lroute=document.getElementById('layer-route');
+const Lveh=document.getElementById('layer-vehicles');
+const Lhud=document.getElementById('layer-hud');
+
+function el(tag,attrs){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function m(px){return px*MPP;}
+
+/* ---------- carte statique ---------- */
+const vRoads=[180,520,860,1200], hRoads=[150,430,710], RW=34;
+const colsX=[[6,163],[197,503],[537,843],[877,1183]];
+const rowsY=[[6,133],[167,413],[447,693],[727,814]];
+const CASERNE={x:16,y:730,w:150,h:78};
+const parkCell={c:3,r:0};
+
+const hydrants=[
+  {x:350,y:150},{x:690,y:150},{x:1030,y:150},
+  {x:180,y:290},{x:1200,y:290},
+  {x:350,y:430},{x:860,y:430},
+  {x:180,y:580},{x:690,y:710},{x:1030,y:710}
+];
+
+function buildStatic(){
+  Lstatic.innerHTML='';
+  Lstatic.appendChild(el('rect',{x:0,y:0,width:1280,height:820,fill:'var(--map-ground)'}));
+  // parc
+  const px=colsX[parkCell.c],py=rowsY[parkCell.r];
+  Lstatic.appendChild(el('rect',{x:px[0],y:py[0],width:px[1]-px[0],height:py[1]-py[0],rx:8,fill:'var(--map-park)'}));
+  for(let i=0;i<6;i++){
+    Lstatic.appendChild(el('circle',{cx:px[0]+20+((px[1]-px[0]-40)*(i%3)/2),cy:py[0]+30+((py[1]-py[0]-60)*Math.floor(i/3)),r:11,fill:'var(--map-fire)',opacity:0}));
+  }
+  // routes (casing + chaussée)
+  vRoads.forEach(x=>{
+    Lstatic.appendChild(el('rect',{x:x-RW/2-3,y:0,width:RW+6,height:820,fill:'var(--map-casing)'}));
+    Lstatic.appendChild(el('rect',{x:x-RW/2,y:0,width:RW,height:820,fill:'var(--map-road)'}));
+  });
+  hRoads.forEach(y=>{
+    Lstatic.appendChild(el('rect',{x:0,y:y-RW/2-3,width:1280,height:RW+6,fill:'var(--map-casing)'}));
+    Lstatic.appendChild(el('rect',{x:0,y:y-RW/2,width:1280,height:RW,fill:'var(--map-road)'}));
+  });
+  roadArrows();
+  // bâtiments décoratifs
+  colsX.forEach((cx,ci)=>rowsY.forEach((ry,rj)=>{
+    if(ci===0&&rj===3) return;                 // caserne
+    if(ci===parkCell.c&&rj===parkCell.r) return; // parc
+    fillBuildings(cx[0],ry[0],cx[1],ry[1]).forEach(b=>{
+      Lstatic.appendChild(el('rect',{x:b.x,y:b.y,width:b.w,height:b.h,rx:2.5,fill:'var(--map-bldg)',stroke:'var(--map-bldg-line)','stroke-width':1.1}));
+      // faîtage (toit vu de dessus -> aspect maison)
+      if(b.w>=b.h) Lstatic.appendChild(el('line',{x1:b.x+3,y1:b.y+b.h/2,x2:b.x+b.w-3,y2:b.y+b.h/2,stroke:'var(--map-bldg-line)','stroke-width':1}));
+      else Lstatic.appendChild(el('line',{x1:b.x+b.w/2,y1:b.y+3,x2:b.x+b.w/2,y2:b.y+b.h-3,stroke:'var(--map-bldg-line)','stroke-width':1}));
+    });
+  }));
+  // caserne
+  Lstatic.appendChild(el('rect',{x:CASERNE.x,y:CASERNE.y,width:CASERNE.w,height:CASERNE.h,rx:5,fill:'var(--map-caserne)'}));
+  const ct=el('text',{x:CASERNE.x+CASERNE.w/2,y:CASERNE.y+CASERNE.h/2+5,'text-anchor':'middle',fill:'#fff',class:'map-tag'});ct.textContent='CASERNE 1';Lstatic.appendChild(ct);
+  // bornes
+  hydrants.forEach(h=>{
+    Lstatic.appendChild(el('circle',{cx:h.x,cy:h.y,r:8.5,fill:'#fff'}));
+    Lstatic.appendChild(el('circle',{cx:h.x,cy:h.y,r:6,fill:'var(--map-hydrant)'}));
+  });
+  // noms de rue
+  addStreet('Rue Clément-Lockquell',640,150,0);
+  addStreet('Boul. des Érables',520,430,-90);
+  addStreet('Rue Principale',640,710,0);
+}
+function addStreet(txt,x,y,rot){
+  const t=el('text',{x,y:y+5,'text-anchor':'middle',class:'street-label',transform:rot?`rotate(${rot} ${x} ${y})`:''});
+  t.textContent=txt;Lstatic.appendChild(t);
+}
+function chev(cx,cy,ang){
+  Lstatic.appendChild(el('path',{d:'M-5,-5 L4,0 L-5,5',fill:'none',stroke:'var(--map-ink)','stroke-width':2,'stroke-linecap':'round','stroke-linejoin':'round',opacity:.55,transform:`translate(${cx} ${cy}) rotate(${ang})`}));
+}
+function oneWayTag(x,y,rot){
+  const t=el('text',{x,y,'text-anchor':'middle',class:'map-tag',fill:'var(--map-ink)','font-size':11,opacity:.8,transform:rot?`rotate(${rot} ${x} ${y})`:''});
+  t.textContent='SENS UNIQUE';Lstatic.appendChild(t);
+}
+function roadArrows(){
+  // rues horizontales : [y, sens]  ('two' = double sens, 'E'/'O' = sens unique)
+  const H=[[150,'two'],[430,'E'],[710,'two']];
+  H.forEach(([y,d])=>{
+    const xs=[];for(let x=95;x<1240;x+=175)xs.push(x);
+    if(d==='two'){ xs.forEach(x=>{chev(x,y+8,0);chev(x,y-8,180);}); }
+    else{ const a=d==='E'?0:180; xs.forEach(x=>chev(x,y,a)); oneWayTag(1120,y-14,0); }
+  });
+  // rues verticales : [x, sens]  ('N'/'S' = sens unique)
+  const V=[[180,'two'],[520,'two'],[860,'S'],[1200,'two']];
+  V.forEach(([x,d])=>{
+    const ys=[];for(let y=95;y<790;y+=150)ys.push(y);
+    if(d==='two'){ ys.forEach(y=>{chev(x+8,y,90);chev(x-8,y,270);}); }
+    else{ const a=d==='S'?90:270; ys.forEach(y=>chev(x,y,a)); oneWayTag(x,120,90); }
+  });
+}
+function fillBuildings(x0,y0,x1,y1){
+  const gap=15,inset=8;const ax=x0+inset,ay=y0+inset,bx=x1-inset,by=y1-inset;
+  const W=bx-ax,H=by-ay,out=[];if(W<30||H<30)return out;
+  const cols=Math.max(1,Math.round((W+gap)/52)),rows=Math.max(1,Math.round((H+gap)/48));
+  const cw=(W-(cols-1)*gap)/cols,ch=(H-(rows-1)*gap)/rows;
+  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++)out.push({x:ax+i*(cw+gap),y:ay+j*(ch+gap),w:cw,h:ch});
+  return out;
+}
+
+/* ---------- scénarios ---------- */
+const scenarios=[
+  {
+    name:'1 · Maison unifamiliale (bungalow)',
+    fire:{x:600,y:181,w:96,h:82},height:6,
+    wind:135,windLabel:'du Nord-Ouest',
+    note:`Appel pour un <b>incendie de bâtiment</b> au 5010, rue Clément-Lockquell — une <b>maison unifamiliale d'un étage</b> (≈ 6 m), détachée. Fumée visible en façade. Vent <b>du Nord-Ouest</b>.
+    <br><br>Trace le trajet de la caserne au lieu, puis place la <b>1re autopompe</b> à ≈ 45 m, la <b>2e</b> à ≈ 6 m derrière, en tenant compte de la <b>borne la plus proche</b> et du <b>sens du vent</b>.`
+  },
+  {
+    name:'2 · Maisons jumelées / en rangée',
+    fire:{x:250,y:309,w:130,h:92},height:7,
+    wind:225,windLabel:'du Nord-Est',
+    note:`<b>Maisons de ville en rangée</b> de 2 étages (≈ 7 m), <b>murs mitoyens</b> avec les logements voisins. Vent <b>du Nord-Est</b> : risque de <b>propagation</b> aux unités attenantes.
+    <br><br>Positionne les véhicules pour <b>protéger les logements voisins</b> et choisis la <b>meilleure borne</b>. Place aussi le <b>PC</b> face au bâtiment.`
+  },
+  {
+    name:'3 · Petit bloc de condos',
+    fire:{x:900,y:571,w:180,h:110},height:9,
+    wind:315,windLabel:'du Sud-Est',
+    note:`<b>Petit immeuble de condos</b> de 3 étages (≈ 9 m), plusieurs logements, <b>occupants à évacuer</b>. Vent <b>du Sud-Est</b>.
+    <br><br>Attention à la <b>distance sécuritaire</b> (1,5 × la hauteur) et prévois l'accès pour l'<b>échelle</b>. Choisis la borne et laisse la place pour l'ajout d'unités.`
+  },
+  {
+    name:'4 · Cottage à étage',
+    fire:{x:930,y:179,w:92,h:90},height:8,
+    wind:90,windLabel:"de l'Ouest",
+    note:`<b>Cottage de 2 étages</b> (≈ 8 m) détaché, feu au rez-de-chaussée. Vent <b>de l'Ouest</b>. Borne tout près à l'intersection.
+    <br><br>Trace l'approche, place la <b>1re autopompe à ≈ 45 m</b> face à la façade et la <b>2e</b> vers la borne. Pense à laisser l'accès pour l'<b>échelle</b>.`
+  },
+  {
+    name:'5 · Duplex résidentiel',
+    fire:{x:620,y:306,w:112,h:95},height:7,
+    wind:180,windLabel:'du Sud',
+    note:`<b>Duplex</b> (2 logements superposés, ≈ 7 m). Fumée au logement du haut, occupant possible. Vent <b>du Sud</b>.
+    <br><br>Positionne les pompes en gardant une <b>voie d'accès dégagée</b> et choisis la borne la plus efficace. Place le <b>PC</b> face au bâtiment (secteur 5).`
+  },
+  {
+    name:'6 · Maison détachée (secteur nord)',
+    fire:{x:960,y:459,w:96,h:84},height:6,
+    wind:0,windLabel:'du Nord',
+    note:`<b>Maison unifamiliale détachée</b> (≈ 6 m), aucun mur mitoyen. Vent <b>du Nord</b> qui pousse la fumée vers la rue.
+    <br><br>Attention au <b>positionnement par rapport au vent</b> : évite de placer les véhicules dans la fumée. Vise la <b>1re autopompe à ≈ 45 m</b>.`
+  },
+  {
+    name:'7 · Maison de plain-pied',
+    fire:{x:280,y:599,w:100,h:82},height:6,
+    wind:135,windLabel:'du Nord-Ouest',
+    note:`<b>Maison de plain-pied</b> (≈ 6 m) en zone résidentielle calme. Vent <b>du Nord-Ouest</b>. Une seule borne à proximité.
+    <br><br>Trace le trajet le plus <b>direct</b> depuis la caserne et positionne les pompes en prévoyant l'arrivée d'une <b>2e unité</b>.`
+  },
+  {
+    name:'8 · Maisons jumelées (rue Principale)',
+    fire:{x:560,y:556,w:132,h:90},height:7,
+    wind:270,windLabel:"de l'Est",
+    note:`<b>Maisons jumelées</b> (≈ 7 m) donnant sur la rue Principale, <b>mur mitoyen</b> à protéger. Vent <b>de l'Est</b>.
+    <br><br>Place les véhicules pour <b>couvrir l'exposition voisine</b> sous le vent et choisis la borne. Garde la façade accessible.`
+  },
+  {
+    name:'9 · Cottage 1½ étage',
+    fire:{x:395,y:480,w:96,h:96},height:8,
+    wind:45,windLabel:'du Sud-Ouest',
+    note:`<b>Cottage 1½ étage</b> (≈ 8 m), combles habités. Vent <b>du Sud-Ouest</b>. Feu apparent à l'étage.
+    <br><br>Attention à la <b>distance sécuritaire</b> et prévois l'<b>échelle</b> pour l'accès en hauteur. Positionne P1 à ≈ 45 m, P2 à ≈ 6 m.`
+  },
+  {
+    name:'10 · Petit condo de 2 étages',
+    fire:{x:889,y:300,w:150,h:100},height:8,
+    wind:225,windLabel:'du Nord-Est',
+    note:`<b>Petit condo de 2 étages</b> (≈ 8 m), plusieurs logements. Vent <b>du Nord-Est</b>, risque de propagation sous le vent.
+    <br><br>Choisis la <b>meilleure borne</b>, positionne les pompes et le <b>PC</b>, et laisse l'espace pour <b>ajouter des unités</b> si la situation évolue.`
+  }
+];
+let current=0;
+
+function fireCenter(){const f=scenarios[current].fire;return{x:f.x+f.w/2,y:f.y+f.h/2};}
+
+function buildScenario(){
+  const s=scenarios[current];Lscen.innerHTML='';
+  // efface les bâtiments décoratifs sous le feu
+  Lscen.appendChild(el('rect',{x:s.fire.x-14,y:s.fire.y-14,width:s.fire.w+28,height:s.fire.h+28,fill:'var(--map-ground)'}));
+  // bâtiment en feu
+  Lscen.appendChild(el('rect',{x:s.fire.x,y:s.fire.y,width:s.fire.w,height:s.fire.h,rx:4,fill:'var(--map-fire)',stroke:'var(--map-fire-line)','stroke-width':2.5}));
+  // flammes/fumée
+  const cx=s.fire.x+s.fire.w/2;
+  const fl=el('text',{x:cx,y:s.fire.y+s.fire.h/2+9,'text-anchor':'middle','font-size':30});fl.textContent='🔥';Lscen.appendChild(fl);
+  const sm=el('text',{x:cx,y:s.fire.y-8,'text-anchor':'middle','font-size':22,opacity:.85});sm.textContent='💨';Lscen.appendChild(sm);
+  // cadran hauteur
+  const ht=el('text',{x:cx,y:s.fire.y+s.fire.h+18,'text-anchor':'middle',class:'map-tag',fill:'var(--map-fire-line)'});ht.textContent='≈ '+s.height+' m';Lscen.appendChild(ht);
+  // cercle distance sécuritaire (1,5 x hauteur)
+  const rad=(1.5*s.height)/MPP;
+  Lscen.appendChild(el('circle',{cx:fireCenter().x,cy:fireCenter().y,r:rad,fill:'none',stroke:'var(--map-fire-line)','stroke-width':1.6,'stroke-dasharray':'7 7',opacity:.55}));
+  buildHud();
+}
+
+/* ---------- HUD : vent, nord, échelle ---------- */
+function buildHud(){
+  Lhud.innerHTML='';
+  const s=scenarios[current];
+  // rose des vents haut-droite
+  const wx=1180,wy=92;
+  Lhud.appendChild(el('circle',{cx:wx,cy:wy,r:34,fill:'var(--panel)',stroke:'var(--line)','stroke-width':1.5,opacity:.96}));
+  const arrow=el('path',{d:'M0,-24 L9,6 L0,-1 L-9,6 Z',fill:'var(--accent)',transform:`translate(${wx} ${wy}) rotate(${s.wind})`});
+  Lhud.appendChild(arrow);
+  const wl=el('text',{x:wx,y:wy+52,'text-anchor':'middle',class:'map-tag',fill:'var(--map-ink)'});wl.textContent='VENT '+s.windLabel;Lhud.appendChild(wl);
+  // nord haut-gauche
+  const nx=44,ny=52;
+  const nl=el('text',{x:nx,y:ny,'text-anchor':'middle',class:'map-tag',fill:'var(--map-ink)','font-size':16});nl.textContent='N';Lhud.appendChild(nl);
+  Lhud.appendChild(el('path',{d:`M${nx},${ny+6} L${nx},${ny+30}`,stroke:'var(--map-ink)','stroke-width':2}));
+  Lhud.appendChild(el('path',{d:`M${nx-5},${ny+13} L${nx},${ny+4} L${nx+5},${ny+13}`,fill:'var(--map-ink)'}));
+  // échelle bas-droite : 50 m
+  const sbx=1050,sby=792,len=50/MPP;
+  Lhud.appendChild(el('rect',{x:sbx-8,y:sby-22,width:len+16,height:30,rx:5,fill:'var(--panel)',opacity:.9,stroke:'var(--line)'}));
+  Lhud.appendChild(el('line',{x1:sbx,y1:sby,x2:sbx+len,y2:sby,stroke:'var(--ink)','stroke-width':3}));
+  Lhud.appendChild(el('line',{x1:sbx,y1:sby-5,x2:sbx,y2:sby+3,stroke:'var(--ink)','stroke-width':3}));
+  Lhud.appendChild(el('line',{x1:sbx+len,y1:sby-5,x2:sbx+len,y2:sby+3,stroke:'var(--ink)','stroke-width':3}));
+  const st=el('text',{x:sbx+len/2,y:sby-9,'text-anchor':'middle',class:'map-tag',fill:'var(--ink)','font-size':12});st.textContent='50 m';Lhud.appendChild(st);
+}
+
+/* ---------- état interactif ---------- */
+let vehicles=[]; let route=[]; let mode=null; let seq=1;
+const VT={
+  P1:{fill:'#d92c1e',ink:'#fff',name:'Autopompe 1',code:'P1'},
+  P2:{fill:'#f0663a',ink:'#fff',name:'Autopompe 2',code:'P2'},
+  ECH:{fill:'#f2b705',ink:'#3a2c00',name:'Échelle 1',code:'É1'},
+  ECH2:{fill:'#e08a00',ink:'#fff',name:'Échelle 2',code:'É2'},
+  PC:{fill:'#2b5fb0',ink:'#fff',name:'Poste cmd',code:'PC'}
+};
+
+function toSvg(evt){
+  const pt=map.createSVGPoint();pt.x=evt.clientX;pt.y=evt.clientY;
+  const p=pt.matrixTransform(map.getScreenCTM().inverse());return{x:p.x,y:p.y};
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+/* ---- zoom / déplacement de la carte ---- */
+const MAXZ=5;
+let mview={z:1,cx:640,cy:410};
+function baseDims(){const r=map.getBoundingClientRect(),W=r.width||1280,H=r.height||820;
+  return (W/H>1280/820)?{w:820*W/H,h:820}:{w:1280,h:1280*H/W};}
+function mapPerPx(){const r=map.getBoundingClientRect();return (baseDims().w/mview.z)/(r.width||1280);}
+function pxToMap(px){return px*mapPerPx();}
+function applyView(){
+  const b=baseDims(),vw=b.w/mview.z,vh=b.h/mview.z;
+  mview.cx=vw>=1280?640:clamp(mview.cx,vw/2,1280-vw/2);
+  mview.cy=vh>=820?410:clamp(mview.cy,vh/2,820-vh/2);
+  map.setAttribute('viewBox',`${mview.cx-vw/2} ${mview.cy-vh/2} ${vw} ${vh}`);
+}
+function centerOn(P,sx,sy){const r=map.getBoundingClientRect(),b=baseDims(),vw=b.w/mview.z,vh=b.h/mview.z;
+  mview.cx=P.x-(sx-r.left)/r.width*vw+vw/2;mview.cy=P.y-(sy-r.top)/r.height*vh+vh/2;applyView();}
+function zoomAt(sx,sy,nz){const P=toSvg({clientX:sx,clientY:sy});mview.z=clamp(nz,1,MAXZ);centerOn(P,sx,sy);}
+function resetView(){mview={z:1,cx:640,cy:410};applyView();}
+function resolveCollision(c,selfId){ // repousse c pour qu'il ne chevauche aucun autre véhicule
+  const pad=5,W=ICON_W+pad,H=ICON_H+pad;
+  for(let it=0;it<10;it++){
+    let moved=false;
+    for(const o of vehicles){
+      if(o.id===selfId)continue;
+      const dx=c.x-o.x,dy=c.y-o.y,ox=W-Math.abs(dx),oy=H-Math.abs(dy);
+      if(ox>0&&oy>0){ // chevauchement : pousser sur l'axe de plus faible pénétration
+        if(ox<=oy)c.x+=(dx>=0?ox:-ox); else c.y+=(dy>=0?oy:-oy);
+        moved=true;
+      }
+    }
+    c.x=clamp(c.x,34,1246);c.y=clamp(c.y,34,786);
+    if(!moved)break;
+  }
+  return c;
+}
+
+function renderVehicles(){
+  Lveh.innerHTML='';
+  vehicles.forEach(v=>{
+    const t=VT[v.type];
+    const g=el('g',{class:'veh',transform:`translate(${v.x} ${v.y})`});
+    g.appendChild(el('rect',{x:-ICON_W/2-12,y:-ICON_H/2-12,width:ICON_W+24,height:ICON_H+24,fill:'transparent'})); // zone tactile élargie
+    g.appendChild(el('rect',{x:-ICON_W/2,y:-ICON_H/2,width:ICON_W,height:ICON_H,rx:8,fill:t.fill,stroke:'rgba(0,0,0,.35)','stroke-width':1.5}));
+    const tx=el('text',{x:0,y:7,'text-anchor':'middle',fill:t.ink});tx.textContent=v.type;g.appendChild(tx);
+    g.addEventListener('pointerdown',e=>onVehDown(e,v,g));
+    Lveh.appendChild(g);
+    v._g=g;
+  });
+}
+function renderRoute(){
+  Lroute.innerHTML='';
+  if(route.length===0)return;
+  const start=[CASERNE.x+CASERNE.w/2,CASERNE.y];
+  const pts=[start,...route.map(p=>[p.x,p.y])];
+  Lroute.appendChild(el('polyline',{points:pts.map(p=>p.join(',')).join(' '),fill:'none',stroke:'var(--route)','stroke-width':5,'stroke-linecap':'round','stroke-linejoin':'round','stroke-dasharray':'2 12','stroke-dashoffset':0,opacity:.95}));
+  route.forEach(p=>Lroute.appendChild(el('circle',{cx:p.x,cy:p.y,r:5,fill:'var(--route)',stroke:'#fff','stroke-width':1.5})));
+  Lroute.appendChild(el('circle',{cx:start[0],cy:start[1],r:6,fill:'#fff',stroke:'var(--route)','stroke-width':3}));
+}
+
+/* interactions */
+const touchPts=new Map();let tapInfo=null,panInfo=null,pinchInfo=null;
+function doTapAction(t){
+  const p=toSvg(t);
+  if(mode&&mode.startsWith('place:')){
+    const type=mode.split(':')[1];
+    const lift=(t.pointerType==='touch')?pxToMap(56):0;   // dépose au-dessus du doigt
+    const cand=resolveCollision({x:clamp(p.x,34,1246),y:clamp(p.y-lift,34,786)},null);
+    vehicles.push({id:seq++,type,x:cand.x,y:cand.y});
+    setMode(null);invalidate();renderVehicles();updateReadout();
+  }else if(mode==='route'){
+    route.push({x:p.x,y:p.y});invalidate();renderRoute();updateReadout();
+  }
+}
+map.addEventListener('pointerdown',e=>{
+  if(e.target.closest('.veh'))return;      // géré par le véhicule
+  touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(touchPts.size===1){
+    tapInfo={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,pointerType:e.pointerType,moved:false};
+    panInfo={id:e.pointerId,x:e.clientX,y:e.clientY};
+  }else if(touchPts.size===2&&!drag){
+    tapInfo=null;panInfo=null;
+    const [a,b]=[...touchPts.values()];
+    pinchInfo={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,z0:mview.z,P0:toSvg({clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2})};
+  }
+});
+let drag=null;
+function onVehDown(e,v,g){
+  e.stopPropagation();
+  if(mode==='erase'){vehicles=vehicles.filter(x=>x.id!==v.id);invalidate();renderVehicles();updateReadout();toast('Véhicule supprimé');return;}
+  const p=toSvg(e);drag={v,g,dx:p.x-v.x,dy:p.y-v.y,lift:(e.pointerType==='touch')?pxToMap(56):0};
+  g.style.cursor='grabbing';g.setPointerCapture(e.pointerId);
+}
+map.addEventListener('pointermove',e=>{
+  if(!drag)return;const p=toSvg(e);
+  const cand=resolveCollision({x:clamp(p.x-drag.dx,34,1246),y:clamp(p.y-drag.dy-drag.lift,34,786)},drag.v.id);
+  drag.v.x=cand.x;drag.v.y=cand.y;
+  drag.g.setAttribute('transform',`translate(${drag.v.x} ${drag.v.y})`);invalidate();updateReadout();
+});
+window.addEventListener('pointerup',()=>{if(drag){drag.g.style.cursor='grab';drag=null;}});
+map.addEventListener('pointermove',e=>{
+  if(!touchPts.has(e.pointerId))return;
+  touchPts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pinchInfo&&touchPts.size>=2){
+    const [a,b]=[...touchPts.values()];
+    mview.z=clamp(pinchInfo.z0*Math.hypot(a.x-b.x,a.y-b.y)/pinchInfo.d0,1,MAXZ);
+    centerOn(pinchInfo.P0,(a.x+b.x)/2,(a.y+b.y)/2);
+  }else if(panInfo&&panInfo.id===e.pointerId){
+    if(tapInfo&&!tapInfo.moved&&Math.hypot(e.clientX-tapInfo.clientX,e.clientY-tapInfo.clientY)>8)tapInfo.moved=true;
+    if(!tapInfo||tapInfo.moved){const k=mapPerPx();mview.cx-=(e.clientX-panInfo.x)*k;mview.cy-=(e.clientY-panInfo.y)*k;applyView();}
+    panInfo.x=e.clientX;panInfo.y=e.clientY;
+  }
+});
+function endPtr(e){
+  if(!touchPts.has(e.pointerId))return;
+  touchPts.delete(e.pointerId);
+  if(e.type==='pointerup'&&!pinchInfo&&tapInfo&&tapInfo.id===e.pointerId&&!tapInfo.moved)doTapAction(tapInfo);
+  if(touchPts.size<2)pinchInfo=null;
+  if(touchPts.size===1){const [id,pt]=[...touchPts.entries()][0];panInfo={id,x:pt.x,y:pt.y};tapInfo=null;}
+  if(touchPts.size===0){panInfo=null;tapInfo=null;}
+}
+map.addEventListener('pointerup',endPtr);map.addEventListener('pointercancel',endPtr);
+map.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')endPtr({type:'pointercancel',pointerId:e.pointerId});});
+map.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,mview.z*Math.exp(-e.deltaY*0.0018));},{passive:false});
+function zoomCenter(f){const r=map.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,mview.z*f);}
+document.getElementById('zin').onclick=()=>zoomCenter(1.6);
+document.getElementById('zout').onclick=()=>zoomCenter(1/1.6);
+document.getElementById('zreset').onclick=resetView;
+
+/* modes & palette */
+function setMode(mo){
+  mode=mo;
+  document.querySelectorAll('.tool').forEach(b=>b.classList.remove('active'));
+  map.classList.remove('placing','routing','erasing');
+  if(!mo)return;
+  if(mo.startsWith('place:')){map.classList.add('placing');document.querySelector(`[data-place="${mo.split(':')[1]}"]`).classList.add('active');}
+  else if(mo==='route'){map.classList.add('routing');document.querySelector('[data-mode="route"]').classList.add('active');}
+  else if(mo==='erase'){map.classList.add('erasing');document.querySelector('[data-mode="erase"]').classList.add('active');}
+}
+document.querySelectorAll('[data-place]').forEach(b=>b.addEventListener('click',()=>{
+  const t='place:'+b.dataset.place;setMode(mode===t?null:t);
+}));
+document.querySelector('[data-mode="route"]').addEventListener('click',()=>setMode(mode==='route'?null:'route'));
+document.querySelector('[data-mode="erase"]').addEventListener('click',()=>setMode(mode==='erase'?null:'erase'));
+document.getElementById('clear-route').addEventListener('click',()=>{route=[];invalidate();renderRoute();updateReadout();toast('Trajet effacé');});
+document.getElementById('reset').addEventListener('click',()=>{vehicles=[];route=[];setMode(null);invalidate();renderVehicles();renderRoute();updateReadout();toast('Réinitialisé');});
+document.getElementById('validate').addEventListener('click',()=>{
+  if(vehicles.length===0&&route.length===0){toast('Place d\'abord tes véhicules et ton trajet');return;}
+  validated=true;setMode(null);renderCorrection();
+});
+
+/* lecture / contrôle en direct */
+function dist(ax,ay,bx,by){return Math.hypot(ax-bx,ay-by);}
+function gapM(a,b){return Math.max(0,(dist(a.x,a.y,b.x,b.y)-ICON_W)*MPP);} // espace bord à bord entre 2 véhicules
+function facadesCouvertes(v){ // 2 = en coin (voit 2 façades), 1 = face à une seule, 0 = sur le bâtiment
+  const f=scenarios[current].fire;
+  const offX=v.x<f.x||v.x>f.x+f.w, offY=v.y<f.y||v.y>f.y+f.h;
+  return (offX&&offY)?2:(offX||offY)?1:0;
+}
+function routeLenM(){
+  if(route.length===0)return 0;
+  let d=0,prev=[CASERNE.x+CASERNE.w/2,CASERNE.y];
+  route.forEach(p=>{d+=dist(prev[0],prev[1],p.x,p.y);prev=[p.x,p.y];});
+  return d*MPP;
+}
+let validated=false;
+function invalidate(){validated=false;clearVerdict();}
+
+function updateReadout(){
+  if(validated){renderCorrection();return;}
+  const ro=document.getElementById('readout');ro.innerHTML='';
+  const s=scenarios[current];const fc=fireCenter();const safe=1.5*s.height;
+  const add=(html)=>{const li=document.createElement('li');li.innerHTML=`<span class="dot"></span><span>${html}</span>`;ro.appendChild(li);};
+
+  if(vehicles.length===0&&route.length===0){
+    ro.innerHTML='<li class="empty">Place les véhicules et trace le trajet, puis clique « Valider » pour la correction.</li>';return;
+  }
+  if(route.length){add(`Trajet des pompes : <span class="val">${Math.round(routeLenM())} m</span> depuis la caserne (${route.length} pt${route.length>1?'s':''}).`);}
+  add(`Distance sécuritaire = 1,5 × ${s.height} m = <span class="val">${safe} m</span> min. autour du feu.`);
+  const p1=vehicles.find(v=>v.type==='P1'),p2=vehicles.find(v=>v.type==='P2');
+  vehicles.forEach(v=>{
+    const dm=dist(v.x,v.y,fc.x,fc.y)*MPP;
+    add(`${VT[v.type].name} : <span class="val">${Math.round(dm)} m</span> du feu`);
+  });
+  if(p1&&p2){
+    add(`Espace entre P1 et P2 : <span class="val">${Math.round(gapM(p1,p2))} m</span>`);
+  }
+}
+
+function renderCorrection(){
+  clearVerdict();
+  const ro=document.getElementById('readout');ro.innerHTML='';
+  const s=scenarios[current];const fc=fireCenter();const safe=1.5*s.height;
+  const p1=vehicles.find(v=>v.type==='P1'),p2=vehicles.find(v=>v.type==='P2');
+  const checks=[];
+  // 1. trajet
+  checks.push({ok:route.length>=2,
+    txt:'Trajet des pompes tracé',
+    why:route.length>=2?`${Math.round(routeLenM())} m depuis la caserne.`:'Trace le chemin de la caserne jusqu\'au lieu (mode « Tracer le trajet »).'});
+  // 2. P1 ≈ 45 m
+  if(p1){const dm=dist(p1.x,p1.y,fc.x,fc.y)*MPP;const ok=dm>=40&&dm<=55;
+    checks.push({ok,txt:'1re autopompe à ≈ 45 m',why:`Mesurée à ${Math.round(dm)} m. ${ok?'Bonne distance pour ne pas nuire aux échelles.':'Vise 45 m (150 pi) du bâtiment.'}`});
+  }else checks.push({ok:false,txt:'1re autopompe placée',why:'Aucune P1 sur la carte.'});
+  // 3. P2 ≈ 6 m de P1
+  if(p1&&p2){const d=gapM(p1,p2);const ok=d>=4&&d<=10;
+    checks.push({ok,txt:'2e autopompe à ≈ 6 m de la 1re',why:`Espace mesuré entre les deux : ${Math.round(d)} m. ${ok?'':'Vise ≈ 6 m d\'écart derrière la P1 (sans les coller).'}`});
+  }else checks.push({ok:false,txt:'2e autopompe placée',why:'Place la P2 à ≈ 6 m derrière la P1.'});
+  // 4. distance sécuritaire respectée
+  const tooClose=vehicles.filter(v=>dist(v.x,v.y,fc.x,fc.y)*MPP<safe);
+  checks.push({ok:tooClose.length===0,txt:`Distance sécuritaire (≥ ${safe} m)`,
+    why:tooClose.length===0?`Aucun véhicule dans le rayon de 1,5 × ${s.height} m.`:`${tooClose.map(v=>v.type).join(', ')} trop près du bâtiment (risque en cas d'effondrement).`});
+  // 5. échelle : doit couvrir 2 façades (placée en coin) — noté si une échelle est présente
+  const ech=vehicles.filter(v=>v.type==='ECH'||v.type==='ECH2');
+  if(ech.length){
+    const best=Math.max(...ech.map(facadesCouvertes));
+    checks.push({ok:best>=2,txt:'Échelle : couvre 2 façades',
+      why:best>=2?'Bien placée en coin — elle couvre deux côtés de l\'édifice.':'Place l\'échelle en <b>coin</b> (en diagonale d\'un angle) pour couvrir deux côtés, pas en face d\'une seule façade.'});
+  }
+  // avis vent (conseil, non noté)
+  let windTip='';
+  if(p1){
+    const th=s.wind*Math.PI/180;const dw={x:Math.sin(th),y:-Math.cos(th)};
+    const fromFire={x:p1.x-fc.x,y:p1.y-fc.y};
+    const dot=fromFire.x*dw.x+fromFire.y*dw.y;
+    windTip=dot>0?`⚠ Conseil vent : la P1 est <b>face au vent</b>, dans la fumée. Vent ${s.windLabel} — place-toi plutôt <b>dos au vent</b>.`
+                 :`✓ Conseil vent : la P1 est bien placée <b>dos au vent</b> (la fumée est poussée vers le feu, loin de l'équipe). Vent ${s.windLabel}.`;
+  }
+
+  const pass=checks.filter(c=>c.ok).length,total=checks.length;
+  const cls=pass===total?'pass':pass>=total-1?'mid':'fail';
+  const label=pass===total?'Positionnement conforme':pass>=total-1?'Presque !':'À revoir';
+  const v=document.createElement('div');v.className='verdict '+cls;
+  v.innerHTML=`<span>${label}</span><span class="score">${pass}/${total}</span>`;
+  ro.parentNode.insertBefore(v,ro);
+
+  checks.forEach(c=>{
+    const li=document.createElement('li');li.className='crit';
+    li.innerHTML=`<span class="dot ${c.ok?'ok':'bad'}"></span><span><b>${c.txt}</b><span class="why">${c.why}</span></span>`;
+    ro.appendChild(li);
+  });
+  if(windTip){const li=document.createElement('li');li.className='crit';
+    li.innerHTML=`<span class="dot warn"></span><span>${windTip}</span>`;ro.appendChild(li);}
+
+  // Échelles et PC — informatif (distance au bâtiment)
+  ['ECH','ECH2','PC'].forEach(type=>{
+    const v=vehicles.find(x=>x.type===type);if(!v)return;
+    const dm=dist(v.x,v.y,fc.x,fc.y)*MPP;
+    let cls='',tip;
+    if(type==='PC'){tip='idéalement face au bâtiment (secteur 5)';}
+    else{const f=facadesCouvertes(v);
+      if(f>=2){cls='ok';tip='✓ couvre 2 façades (bien placée en coin)';}
+      else{cls='warn';tip='ne couvre qu\'une façade — déplace-la vers un coin';}}
+    const li=document.createElement('li');li.className='crit';
+    li.innerHTML=`<span class="dot ${cls}"></span><span><b>${VT[type].name}</b><span class="why"><span class="val">${Math.round(dm)} m</span> du bâtiment — ${tip}.</span></span>`;
+    ro.appendChild(li);
+  });
+}
+function clearVerdict(){document.querySelectorAll('.verdict').forEach(v=>v.remove());}
+
+/* toast */
+let toT;const toastEl=document.getElementById('toast');
+function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toT);toT=setTimeout(()=>toastEl.classList.remove('show'),1600);}
+
+/* scénarios select */
+const sel=document.getElementById('scenario');
+scenarios.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.name;sel.appendChild(o);});
+sel.addEventListener('change',()=>{
+  current=+sel.value;resetView();vehicles=[];route=[];setMode(null);invalidate();
+  document.getElementById('note').innerHTML=scenarios[current].note;
+  buildScenario();renderVehicles();renderRoute();updateReadout();toast('Nouveau scénario chargé');
+});
+
+/* thème */
+document.getElementById('theme').addEventListener('click',()=>{
+  const r=document.documentElement;
+  const dark=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);
+  r.setAttribute('data-theme',dark?'light':'dark');
+});
+
+/* init */
+buildStatic();
+document.getElementById('note').innerHTML=scenarios[current].note;
+buildScenario();updateReadout();
+applyView();window.addEventListener('resize',applyView);
+if(window.ResizeObserver)new ResizeObserver(()=>applyView()).observe(map);
+</script>
+
+</body>
+</html>

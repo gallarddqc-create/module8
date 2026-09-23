@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Entraîneur radio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+  :root{
+    --bg:#ece9e2;--panel:#ffffff;--panel-2:#f5f6f2;--line:#dcdfd7;--ink:#1c211d;--soft:#5f675e;
+    --accent:#d92c1e;--ok:#1a8a4f;--bad:#d92c1e;--warn:#d98a00;
+    --shadow:0 1px 2px rgba(20,30,20,.06),0 10px 30px rgba(20,30,20,.08);
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#14150f;--panel:#1d211b;--panel-2:#23281f;--line:#333a2e;--ink:#e9ece3;--soft:#a3ab9d;
+    --accent:#ff5b4d;--ok:#37d996;--bad:#ff6b5e;--warn:#f0a83a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.4);}}
+  :root[data-theme="dark"]{
+    --bg:#14150f;--panel:#1d211b;--panel-2:#23281f;--line:#333a2e;--ink:#e9ece3;--soft:#a3ab9d;
+    --accent:#ff5b4d;--ok:#37d996;--bad:#ff6b5e;--warn:#f0a83a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 34px rgba(0,0,0,.4);}
+  *{box-sizing:border-box}
+  html,body{min-height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
+    padding:20px 16px 40px;display:flex;justify-content:center;}
+  .wrap{width:100%;max-width:640px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .badge{width:46px;height:46px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-size:24px;flex:none}
+  h1{font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    font-size:24px;margin:0;line-height:1}
+  header p{margin:3px 0 0;font-size:12.5px;color:var(--soft)}
+  .theme{margin-left:auto;font-family:inherit;font-size:13px;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}
+
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .mode{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;
+    box-shadow:var(--shadow);transition:.14s;font-family:inherit;color:inherit}
+  .mode:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .mode .ic{font-size:24px}
+  .mode .t{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.3px}
+  .mode .d{font-size:12px;color:var(--soft);line-height:1.4}
+  .mode.full{grid-column:1/-1}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+    padding:22px;margin-top:4px}
+  .topline{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .back{font-family:inherit;font-size:13px;color:var(--soft);background:none;border:none;cursor:pointer;padding:0}
+  .prog{flex:1;height:8px;background:var(--panel-2);border-radius:99px;overflow:hidden}
+  .prog>i{display:block;height:100%;background:var(--accent);width:0;transition:.3s}
+  .count{font-size:12.5px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .q{font-size:15px;color:var(--soft);margin:0 0 6px}
+  .qbig{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:32px;line-height:1.1;margin:0 0 20px;text-wrap:balance}
+  .opts{display:flex;flex-direction:column;gap:10px}
+  .opt{font-family:inherit;font-size:16px;text-align:left;background:var(--panel-2);color:var(--ink);
+    border:1.5px solid var(--line);border-radius:11px;padding:14px 16px;cursor:pointer;transition:.12s}
+  .opt:hover:not(:disabled){border-color:var(--soft)}
+  .opt:disabled{cursor:default}
+  .opt.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent);font-weight:600}
+  .opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,transparent)}
+  .expl{margin:16px 0 0;padding:12px 14px;background:var(--panel-2);border-radius:11px;font-size:13.5px;line-height:1.5;color:var(--ink)}
+  .expl b{color:var(--accent)}
+  .next{margin-top:16px;width:100%;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:16px;
+    text-transform:uppercase;letter-spacing:.4px;background:var(--accent);color:#fff;border:none;border-radius:11px;padding:13px;cursor:pointer}
+
+  /* flashcards */
+  .flash{perspective:1200px;margin-top:4px}
+  .fcard{position:relative;height:240px;cursor:pointer;transform-style:preserve-3d;transition:transform .5s}
+  .fcard.flip{transform:rotateY(180deg)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;background:var(--panel);border:1px solid var(--line);
+    border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center}
+  .face .big{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:44px;color:var(--accent);line-height:1}
+  .face .lbl{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--soft)}
+  .face .txt{font-size:17px;line-height:1.4}
+  .back-face{transform:rotateY(180deg)}
+  .fnav{display:flex;gap:10px;margin-top:14px;align-items:center}
+  .fnav button{flex:1;font-family:inherit;font-size:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px;cursor:pointer;color:var(--ink)}
+  .flip-hint{text-align:center;font-size:12px;color:var(--soft);margin-top:10px}
+
+  /* results */
+  .result{text-align:center;padding:10px 0}
+  .score{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:56px;line-height:1}
+  .result .msg{font-size:16px;margin:8px 0 22px}
+  .result .row{display:flex;gap:10px}
+  .result .row button{flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    font-size:15px;border-radius:11px;padding:13px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .result .row button.primary{background:var(--accent);color:#fff;border-color:transparent}
+  /* mode ordre */
+  .ord-instr{font-size:13.5px;color:var(--soft);margin:0 0 14px;line-height:1.5}
+  .slots{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+  .slot{display:flex;gap:11px;align-items:flex-start;background:var(--panel-2);border:1.5px solid var(--line);
+    border-radius:11px;padding:12px 14px;min-height:46px;cursor:pointer;font-size:14px;line-height:1.35}
+  .slot .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--accent);min-width:18px}
+  .slot.empty{color:var(--soft);font-style:italic;cursor:default}
+  .slot.correct{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+  .slot.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+  .pool-lbl{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--soft);margin:0 0 8px}
+  .pool{display:flex;flex-direction:column;gap:8px}
+  .chip{text-align:left;background:var(--panel);border:1.5px solid var(--line);border-radius:11px;padding:12px 14px;
+    cursor:pointer;font-family:inherit;font-size:14px;line-height:1.35;color:var(--ink)}
+  .chip:hover{border-color:var(--soft)}
+  .ord-actions{display:flex;gap:10px;margin-top:16px}
+  .ord-actions button{flex:1;font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.4px;font-size:15px;border-radius:11px;padding:13px;cursor:pointer;border:1px solid var(--line);background:var(--panel-2);color:var(--ink)}
+  .ord-actions button.primary{background:var(--accent);color:#fff;border-color:transparent}
+  .ord-actions button:disabled{opacity:.45;cursor:default}
+  .ord-result{margin-top:14px;padding:13px 15px;border-radius:11px;font-size:13.5px;line-height:1.5}
+  .ord-result ol{margin:8px 0 0;padding-left:20px}
+  .ord-result li{margin-bottom:5px}
+  [hidden]{display:none!important}
+  footer{margin-top:22px;font-size:12px;color:var(--soft);text-align:center;line-height:1.5}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">📻</div>
+    <div>
+      <h1>Entraîneur radio</h1>
+      <p>Module 8 · Ch. 1 — Codes de communication</p>
+    </div>
+    <button class="theme" id="theme">◐ Thème</button>
+  </header>
+
+  <section id="menu" class="modes">
+    <button class="mode" data-mode="codes"><span class="ic">🔟</span><span class="t">Codes 10-XX</span><span class="d">Devine la signification des codes radio</span></button>
+    <button class="mode" data-mode="phon"><span class="ic">🔤</span><span class="t">Alphabet phonétique</span><span class="d">Alpha, Bravo, Charlie…</span></button>
+    <button class="mode" data-mode="sinpo"><span class="ic">📶</span><span class="t">Code SINPO</span><span class="d">Qualité des essais radio</span></button>
+    <button class="mode" data-mode="nombres"><span class="ic">🔢</span><span class="t">Transmission des nombres</span><span class="d">Épeler les chiffres correctement</span></button>
+    <button class="mode full" data-mode="ordre"><span class="ic">🧩</span><span class="t">Étapes d'un appel d'urgence</span><span class="d">Remets les étapes du cheminement dans le bon ordre</span></button>
+    <button class="mode full" data-mode="flash"><span class="ic">🗂️</span><span class="t">Révision — cartes 10-XX</span><span class="d">Cartes recto/verso pour apprendre avant de te tester</span></button>
+  </section>
+
+  <section id="quiz" class="card" hidden>
+    <div class="topline">
+      <button class="back" data-back>← Menu</button>
+      <div class="prog"><i id="bar"></i></div>
+      <span class="count" id="count"></span>
+    </div>
+    <p class="q" id="qlabel"></p>
+    <p class="qbig" id="qtext"></p>
+    <div class="opts" id="opts"></div>
+    <div class="expl" id="expl" hidden></div>
+    <button class="next" id="next" hidden>Suivant →</button>
+  </section>
+
+  <section id="flashwrap" class="card" hidden>
+    <div class="topline">
+      <button class="back" data-back>← Menu</button>
+      <div class="prog"><i id="fbar"></i></div>
+      <span class="count" id="fcount"></span>
+    </div>
+    <div class="flash">
+      <div class="fcard" id="fcard">
+        <div class="face"><span class="lbl">Code</span><span class="big" id="fFront"></span></div>
+        <div class="face back-face"><span class="lbl" id="fBackLbl">Signification</span><span class="txt" id="fBack"></span></div>
+      </div>
+    </div>
+    <p class="flip-hint">Touche la carte pour la retourner</p>
+    <div class="fnav">
+      <button id="fprev">← Précédent</button>
+      <button id="fnext">Suivant →</button>
+    </div>
+  </section>
+
+  <section id="orderwrap" class="card" hidden>
+    <div class="topline">
+      <button class="back" data-back>← Menu</button>
+      <span class="count" id="ordcount" style="margin-left:auto"></span>
+    </div>
+    <p class="q">Cheminement d'un appel d'urgence</p>
+    <p class="ord-instr">Touche les étapes dans le bon ordre. Touche une étape déjà placée pour la retirer, puis clique « Valider ».</p>
+    <div class="slots" id="slots"></div>
+    <p class="pool-lbl">Étapes à placer</p>
+    <div class="pool" id="pool"></div>
+    <div class="ord-result" id="ordResult" hidden></div>
+    <div class="ord-actions">
+      <button id="ordReset">Mélanger</button>
+      <button class="primary" id="ordValidate">Valider</button>
+    </div>
+  </section>
+
+  <section id="results" class="card" hidden>
+    <div class="result">
+      <div class="score" id="finalScore"></div>
+      <p class="msg" id="finalMsg"></p>
+      <div class="row">
+        <button class="primary" id="retry">Recommencer</button>
+        <button id="toMenu">Menu</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Contenu tiré des notes de cours (NDC V4 M8). ·
+    <a href="plan.html">Aller au simulateur de positionnement →</a>
+  </footer>
+</div>
+
+<script>
+/* ---------- DONNÉES (notes de cours M8) ---------- */
+const CODES=[
+  {c:"10-01",s:"À l'écoute",sig:"À l'écoute de l'interlocuteur."},
+  {c:"10-02",s:"Répétez le message",sig:"La ressource n'a pas bien reçu/compris le message."},
+  {c:"10-03",s:"Mission annulée",sig:"Annulez la mission en cours."},
+  {c:"10-04",s:"Message reçu",sig:"Message capté et bien compris par l'interlocuteur."},
+  {c:"10-05",s:"Disponible / libéré",sig:"Disponible pour une autre mission (unité remise en service)."},
+  {c:"10-07",s:"Intervention nécessaire",sig:"Intervention nécessaire en arrivant sur les lieux."},
+  {c:"10-08",s:"Effectifs suffisants",sig:"Aggravation improbable, les ressources en place suffisent."},
+  {c:"10-09",s:"Effectifs tous assignés",sig:"Aggravation possible, besoin probable de renfort."},
+  {c:"10-10",s:"Maître de la situation",sig:"Sinistre maîtrisé / sous contrôle."},
+  {c:"10-16",s:"En route pour l'appel",sig:"Unité assignée en direction du lieu d'intervention."},
+  {c:"10-17",s:"Arrivée sur le site",sig:"Unité arrivée sur le site; informer la répartition et le responsable."},
+  {c:"10-18",s:"En reconnaissance",sig:"Le personnel procède à la reconnaissance des lieux."},
+  {c:"10-19",s:"Fausse alerte",sig:"Alarme non fondée."},
+  {c:"10-22",s:"Services non requis",sig:"Libération des unités sauf celles précisées par l'officier."},
+  {c:"10-28",s:"Compagnie de détection ?",sig:"Être informé si un représentant de la compagnie de détection est en route."},
+  {c:"10-31",s:"Demande urgence-environnement",sig:"Acheminez urgence-environnement sur le site."},
+  {c:"10-33",s:"Demande travaux publics",sig:"Acheminez les travaux publics (préciser la raison)."},
+  {c:"10-34",s:"Demande ambulance(s)",sig:"Acheminez les ambulances (préciser raison et nombre de victimes)."},
+  {c:"10-35",s:"Demande police",sig:"Acheminez le service de police (préciser la raison)."},
+  {c:"10-36",s:"Demande compagnie d'électricité",sig:"Acheminez la compagnie d'électricité (préciser la raison)."},
+  {c:"10-37",s:"Demande compagnie de gaz",sig:"Acheminez la compagnie de gaz naturel (préciser la raison)."}
+];
+const PHON=[
+  ["A","Alpha"],["B","Bravo"],["C","Charlie"],["D","Delta"],["E","Echo"],["F","Foxtrot"],
+  ["G","Golf"],["H","Hôtel"],["I","India"],["J","Juliette"],["K","Kilo"],["L","Lima"],
+  ["M","Mike"],["N","November"],["O","Oscar"],["P","Papa"],["Q","Québec"],["R","Roméo"],
+  ["S","Sierra"],["T","Tango"],["U","Uniform"],["V","Victor"],["W","Whisky"],["X","Xray"],
+  ["Y","Yankee"],["Z","Zulu"]
+].map(([l,w])=>({l,w}));
+const SINPO=[
+  {cote:"5",g:"Excellent",son:"Excellent"},
+  {cote:"4",g:"Bon",son:"Bon"},
+  {cote:"3",g:"Moyen",son:"Moyen"},
+  {cote:"2",g:"Mauvais",son:"Faible"},
+  {cote:"1",g:"Inutilisable",son:"Inutilisable"}
+];
+const NOMBRES=[
+  {n:"10",correct:"Un zéro",wrong:["Dix","Un zéro zéro","Une dizaine"]},
+  {n:"75",correct:"Sept cinq",wrong:["Soixante-quinze","Sept cinquante","Sept zéro cinq"]},
+  {n:"100",correct:"Un zéro zéro",wrong:["Cent","Un cent","Dix zéro"]},
+  {n:"583",correct:"Cinq huit trois",wrong:["Cinq cent quatre-vingt-trois","Cinquante-huit trois","Cinq huit cent"]},
+  {n:"5 000",correct:"Cinq mille",wrong:["Cinq zéro zéro zéro","Cinq zéro zéro","Cinquante cent"]},
+  {n:"5 800",correct:"Cinq huit zéro zéro",wrong:["Cinq mille huit cent","Cinquante-huit cents","Cinq huit cent"]},
+  {n:"11 000",correct:"Un un mille",wrong:["Onze mille","Un un zéro zéro zéro","Onze zéro zéro zéro"]},
+  {n:"25 000",correct:"Deux cinq mille",wrong:["Vingt-cinq mille","Deux cinq zéro zéro zéro","Deux cinquante mille"]},
+  {n:"38 143",correct:"Trois huit un quatre trois",wrong:["Trente-huit mille cent quarante-trois","Trois huit cent quarante-trois","Trois huit un quarante-trois"]}
+];
+
+/* ---------- OUTILS ---------- */
+const $=id=>document.getElementById(id);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+function sample(a,n){return shuffle(a).slice(0,n);}
+
+/* construit les questions selon le mode */
+function buildQuestions(mode){
+  let qs=[];
+  if(mode==="codes"){
+    sample(CODES,10).forEach(c=>{
+      if(Math.random()<0.5){ // code -> signification
+        const opts=shuffle([c.s,...sample(CODES.filter(x=>x.c!==c.c),3).map(x=>x.s)]);
+        qs.push({label:"Que signifie ce code ?",text:c.c,options:opts,correct:c.s,expl:`<b>${c.c}</b> — ${c.sig}`});
+      }else{ // signification -> code
+        const opts=shuffle([c.c,...sample(CODES.filter(x=>x.c!==c.c),3).map(x=>x.c)]);
+        qs.push({label:"Quel code correspond ?",text:c.s,options:opts,correct:c.c,expl:`<b>${c.c}</b> — ${c.sig}`});
+      }
+    });
+  }else if(mode==="phon"){
+    sample(PHON,10).forEach(p=>{
+      if(Math.random()<0.5){
+        const opts=shuffle([p.w,...sample(PHON.filter(x=>x.l!==p.l),3).map(x=>x.w)]);
+        qs.push({label:"Mot phonétique pour la lettre :",text:p.l,options:opts,correct:p.w,expl:`<b>${p.l}</b> = ${p.w}`});
+      }else{
+        const opts=shuffle([p.l,...sample(PHON.filter(x=>x.l!==p.l),3).map(x=>x.l)]);
+        qs.push({label:"Quelle lettre correspond à :",text:p.w,options:opts,correct:p.l,expl:`<b>${p.w}</b> = lettre ${p.l}`});
+      }
+    });
+  }else if(mode==="sinpo"){
+    sample(SINPO,5).concat(sample(SINPO,3)).forEach(r=>{
+      if(Math.random()<0.5){
+        const opts=shuffle([r.g,...sample(SINPO.filter(x=>x.cote!==r.cote),3).map(x=>x.g)]);
+        qs.push({label:"Cote SINPO — aspect global :",text:"Cote "+r.cote,options:opts,correct:r.g,expl:`Cote <b>${r.cote}</b> = aspect global « ${r.g} »`});
+      }else{
+        const opts=shuffle([r.cote,...sample(SINPO.filter(x=>x.cote!==r.cote),3).map(x=>x.cote)]);
+        qs.push({label:"Quelle cote pour un aspect global :",text:"« "+r.g+" »",options:opts,correct:r.cote,expl:`Aspect « ${r.g} » = cote <b>${r.cote}</b>`});
+      }
+    });
+    qs=qs.slice(0,8);
+  }else if(mode==="nombres"){
+    shuffle(NOMBRES).forEach(x=>{
+      const opts=shuffle([x.correct,...x.wrong]);
+      qs.push({label:"Comment transmettre ce nombre à la radio ?",text:x.n,options:opts,correct:x.correct,
+        expl:`<b>${x.n}</b> → « ${x.correct} ». Règle : chaque chiffre séparément, sauf les multiples entiers de mille.`});
+    });
+  }
+  return qs;
+}
+
+/* ---------- MOTEUR DE QUIZ ---------- */
+let questions=[],idx=0,score=0,curMode=null,answered=false;
+function show(sec){["menu","quiz","flashwrap","orderwrap","results"].forEach(id=>$(id).hidden=(id!==sec));}
+
+function startQuiz(mode){
+  curMode=mode;questions=buildQuestions(mode);idx=0;score=0;show("quiz");renderQ();
+}
+function renderQ(){
+  answered=false;
+  const q=questions[idx];
+  $("qlabel").textContent=q.label;
+  $("qtext").textContent=q.text;
+  $("count").textContent=`${idx+1} / ${questions.length}`;
+  $("bar").style.width=`${(idx)/questions.length*100}%`;
+  $("expl").hidden=true;$("next").hidden=true;
+  const box=$("opts");box.innerHTML="";
+  q.options.forEach(o=>{
+    const b=document.createElement("button");b.className="opt";b.textContent=o;
+    b.onclick=()=>choose(b,o,q);box.appendChild(b);
+  });
+}
+function choose(btn,val,q){
+  if(answered)return;answered=true;
+  const correct=val===q.correct;
+  if(correct)score++;
+  [...$("opts").children].forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===q.correct)b.classList.add("correct");
+    else if(b===btn)b.classList.add("wrong");
+  });
+  $("expl").innerHTML=(correct?"✅ ":"❌ ")+q.expl;$("expl").hidden=false;
+  $("bar").style.width=`${(idx+1)/questions.length*100}%`;
+  $("next").hidden=false;
+  $("next").textContent=idx+1<questions.length?"Suivant →":"Voir mon résultat";
+}
+$("next").onclick=()=>{
+  idx++;
+  if(idx<questions.length)renderQ();else finish();
+};
+function finish(){
+  show("results");
+  const total=questions.length;
+  $("finalScore").textContent=`${score} / ${total}`;
+  const pct=score/total;
+  $("finalScore").style.color=pct>=0.8?"var(--ok)":pct>=0.5?"var(--warn)":"var(--bad)";
+  $("finalMsg").textContent=pct===1?"Parfait ! Tu maîtrises.":pct>=0.8?"Très bien — presque parfait !":pct>=0.5?"Correct, mais continue à réviser.":"À retravailler — refais un tour.";
+}
+$("retry").onclick=()=>startQuiz(curMode);
+$("toMenu").onclick=()=>show("menu");
+
+/* ---------- FLASHCARDS ---------- */
+let deck=[],fidx=0;
+function startFlash(){
+  deck=shuffle(CODES);fidx=0;show("flashwrap");renderFlash();
+}
+function renderFlash(){
+  const c=deck[fidx];
+  $("fcard").classList.remove("flip");
+  $("fFront").textContent=c.c;
+  $("fBack").textContent=c.sig;
+  $("fBackLbl").textContent=c.s;
+  $("fcount").textContent=`${fidx+1} / ${deck.length}`;
+  $("fbar").style.width=`${(fidx+1)/deck.length*100}%`;
+}
+$("fcard").onclick=()=>$("fcard").classList.toggle("flip");
+$("fprev").onclick=()=>{fidx=(fidx-1+deck.length)%deck.length;renderFlash();};
+$("fnext").onclick=()=>{fidx=(fidx+1)%deck.length;renderFlash();};
+
+/* ---------- MODE ORDRE (cheminement d'un appel) ---------- */
+const STEPS=[
+  "Réception de l'appel au centre secondaire incendie",
+  "L'opérateur note les informations pertinentes et les consigne",
+  "L'opérateur sonne l'alarme à la caserne du secteur et diffuse l'adresse et le type d'incendie",
+  "Le responsable de la caserne confirme l'adresse et informe de la mise en route des effectifs",
+  "L'opérateur accuse réception et consigne l'heure de départ",
+  "Confirmation de l'arrivée sur les lieux",
+  "Le 1er véhicule s'identifie, annonce son arrivée et informe l'opérateur de la situation",
+  "L'opérateur consigne les infos, les déplacements des renforts et leur identification (délais, rapports)"
+];
+let ordPool=[],ordAns=[],ordDone=false;
+function startOrder(){
+  ordDone=false;ordAns=[];
+  ordPool=shuffle(STEPS.map((t,i)=>({t,i})));
+  show("orderwrap");renderOrder();
+}
+function renderOrder(){
+  const slots=$("slots");slots.innerHTML="";
+  for(let i=0;i<STEPS.length;i++){
+    const a=ordAns[i];const d=document.createElement("div");
+    if(a){
+      d.className="slot"+(ordDone?(a.i===i?" correct":" wrong"):"");
+      d.innerHTML=`<span class="num">${i+1}</span><span>${a.t}</span>`;
+      if(!ordDone)d.onclick=()=>{ordPool.push(a);ordAns.splice(i,1);renderOrder();};
+    }else{
+      d.className="slot empty";d.innerHTML=`<span class="num">${i+1}</span><span>—</span>`;
+    }
+    slots.appendChild(d);
+  }
+  const pool=$("pool");pool.innerHTML="";
+  ordPool.forEach(p=>{
+    const b=document.createElement("button");b.className="chip";b.textContent=p.t;
+    b.onclick=()=>{if(ordDone)return;ordAns.push(p);ordPool=ordPool.filter(x=>x!==p);renderOrder();};
+    pool.appendChild(b);
+  });
+  $("ordcount").textContent=`${ordAns.length} / ${STEPS.length}`;
+  $("ordValidate").disabled=ordAns.length!==STEPS.length||ordDone;
+  if(!ordDone)$("ordResult").hidden=true;
+}
+$("ordValidate").onclick=()=>{
+  if(ordAns.length!==STEPS.length)return;
+  ordDone=true;renderOrder();
+  const good=ordAns.filter((a,i)=>a.i===i).length;
+  const r=$("ordResult");r.hidden=false;
+  if(good===STEPS.length){
+    r.style.background="color-mix(in srgb,var(--ok) 14%,transparent)";r.style.color="var(--ok)";
+    r.innerHTML="✅ Parfait — ordre exact !";
+  }else{
+    r.style.background="color-mix(in srgb,var(--bad) 12%,transparent)";r.style.color="var(--ink)";
+    r.innerHTML=`<b>${good} / ${STEPS.length}</b> bien placées (les étapes en rouge sont mal placées).<br><br><b>Ordre correct :</b><ol>${STEPS.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+  }
+};
+$("ordReset").onclick=startOrder;
+
+/* ---------- NAVIGATION ---------- */
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{
+  const m=b.dataset.mode;
+  if(m==="flash")startFlash();else if(m==="ordre")startOrder();else startQuiz(m);
+});
+document.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>show("menu"));
+$("theme").onclick=()=>{
+  const r=document.documentElement;
+  const dark=r.getAttribute("data-theme")==="dark"||(!r.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);
+  r.setAttribute("data-theme",dark?"light":"dark");
+};
+</script>
+</body>
+</html>
