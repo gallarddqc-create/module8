@@ -503,6 +503,8 @@ function centerOn(P,sx,sy){const r=map.getBoundingClientRect(),b=baseDims(),vw=b
   mview.cx=P.x-(sx-r.left)/r.width*vw+vw/2;mview.cy=P.y-(sy-r.top)/r.height*vh+vh/2;applyView();}
 function zoomAt(sx,sy,nz){const P=toSvg({clientX:sx,clientY:sy});mview.z=clamp(nz,1,MAXZ);centerOn(P,sx,sy);}
 function resetView(){mview={z:1,cx:640,cy:410};applyView();}
+// Écran vertical (téléphone) : on ouvre zoomé pour remplir la hauteur, centré sur le feu
+function initView(){const b=baseDims(),fc=fireCenter();mview={z:b.h>820?Math.min(MAXZ,b.h/820):1,cx:fc.x,cy:fc.y};applyView();}
 function resolveCollision(c,selfId){ // repousse c pour qu'il ne chevauche aucun autre véhicule
   const pad=5,W=ICON_W+pad,H=ICON_H+pad;
   for(let it=0;it<10;it++){
@@ -751,7 +753,7 @@ function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearT
 const sel=document.getElementById('scenario');
 scenarios.forEach((s,i)=>{const o=document.createElement('option');o.value=i;o.textContent=s.name;sel.appendChild(o);});
 sel.addEventListener('change',()=>{
-  current=+sel.value;resetView();vehicles=[];route=[];setMode(null);invalidate();
+  current=+sel.value;initView();vehicles=[];route=[];setMode(null);invalidate();
   document.getElementById('note').innerHTML=scenarios[current].note;
   buildScenario();renderVehicles();renderRoute();updateReadout();toast('Nouveau scénario chargé');
 });
@@ -767,7 +769,7 @@ document.getElementById('theme').addEventListener('click',()=>{
 buildStatic();
 document.getElementById('note').innerHTML=scenarios[current].note;
 buildScenario();updateReadout();
-applyView();window.addEventListener('resize',applyView);
+initView();window.addEventListener('resize',applyView);
 if(window.ResizeObserver)new ResizeObserver(()=>applyView()).observe(map);
 </script>
 
